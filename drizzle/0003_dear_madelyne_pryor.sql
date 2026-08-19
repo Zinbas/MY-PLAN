@@ -1,0 +1,1 @@
+ALTER TABLE `calendarConnections` ADD `accessTokenExpiresAt` timestamp;

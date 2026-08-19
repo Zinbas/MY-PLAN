@@ -3,6 +3,9 @@
  * palette, fine notebook rules, and visibly labeled demo states for external integrations.
  */
 import { useMemo, useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { getLinkedEventDisplayState } from "@/lib/calendarState";
 import {
   ArrowRight,
   CalendarDays,
@@ -32,6 +35,8 @@ type CalendarItem = {
   date: string;
   time?: string;
   source?: string;
+  persistedId?: number;
+  linkedCalendarId?: number;
 };
 
 type DemoConnection = {
@@ -92,11 +97,26 @@ function formatDate(key: string) {
   return new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(new Date(year, month - 1, day));
 }
 
+function dateKeyFromDate(value: Date) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
 function PanelButton({ section, active, icon: Icon, label, onClick }: { section: Section; active: Section; icon: typeof CalendarDays; label: string; onClick: () => void }) {
   return <button className={`rail-action ${section === active ? "is-active" : ""}`} onClick={onClick}><Icon size={17} /><span>{label}</span></button>;
 }
 
 export default function Home() {
+  const { isAuthenticated } = useAuth();
+  const readiness = trpc.calendar.readiness.useQuery();
+  const persistedConnections = trpc.calendar.connections.useQuery(undefined, { enabled: isAuthenticated });
+  const linkedCalendars = trpc.calendar.linkedCalendars.useQuery(undefined, { enabled: isAuthenticated });
+  const [eventWindow] = useState(() => ({ startAt: new Date(2026, 7, 1), endAt: new Date(2027, 0, 1) }));
+  const persistedEvents = trpc.calendar.events.useQuery(eventWindow, { enabled: isAuthenticated });
+  const linkedEventDisplayState = getLinkedEventDisplayState({ authenticated: isAuthenticated, loading: persistedEvents.isLoading, error: Boolean(persistedEvents.error), count: persistedEvents.data?.length });
+  const utils = trpc.useUtils();
+  const createPersistedEvent = trpc.calendar.createEvent.useMutation({ onSuccess: () => utils.calendar.events.invalidate() });
+  const updatePersistedEvent = trpc.calendar.updateEvent.useMutation({ onSuccess: () => utils.calendar.events.invalidate() });
+  const deletePersistedEvent = trpc.calendar.deleteEvent.useMutation({ onSuccess: () => utils.calendar.events.invalidate() });
   const [activeMonthIndex, setActiveMonthIndex] = useState(0);
   const [activeSection, setActiveSection] = useState<Section>("calendar");
   const [selectedDate, setSelectedDate] = useState(dateKey(7, 12));
@@ -108,9 +128,30 @@ export default function Home() {
   const [draftTitle, setDraftTitle] = useState("");
   const [draftTime, setDraftTime] = useState("07:00 PM");
   const [draftCategory, setDraftCategory] = useState<Category>("focus");
+  const [saveToLinkedCalendar, setSaveToLinkedCalendar] = useState(false);
+  const [editingPersistedItem, setEditingPersistedItem] = useState<CalendarItem | null>(null);
 
   const activeMonth = MONTH_INDICES[activeMonthIndex];
-  const allItems = useMemo(() => [...scheduleItems, ...customItems], [customItems]);
+  const importedItems = useMemo<CalendarItem[]>(() => (persistedEvents.data ?? []).map(event => ({
+    id: `persisted-${event.id}`,
+    title: event.title,
+    category: "focus",
+    date: dateKeyFromDate(event.startAt),
+    time: event.isAllDay ? undefined : event.startAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    source: "Linked Google calendar",
+    persistedId: event.id,
+    linkedCalendarId: event.linkedCalendarId,
+  })), [persistedEvents.data]);
+  const allItems = useMemo(() => [...scheduleItems, ...importedItems, ...customItems], [customItems, importedItems]);
+  const linkedConnections: DemoConnection[] = (persistedConnections.data ?? []).map(connection => ({
+    id: `linked-${connection.id}`,
+    email: connection.email,
+    kind: connection.accountType === "workspace" ? "Workspace" : "Google",
+    calendarCount: connection.calendars.length,
+    status: "Connected",
+    lastSync: connection.updatedAt.toLocaleString(),
+  }));
+  const shownConnections = linkedConnections.length ? [...linkedConnections, ...connections.filter(connection => connection.status === "Demo")] : connections;
   const calendarDays = useMemo(() => getCalendarDays(activeMonth), [activeMonth]);
   const selectedItems = allItems.filter(item => item.date === selectedDate);
   const monthItems = allItems.filter(item => item.date.startsWith(`${YEAR}-${String(activeMonth + 1).padStart(2, "0")}`));
@@ -125,6 +166,29 @@ export default function Home() {
     setDraftTitle(""); setShowComposer(false); setToast(`Added “${title}” to ${formatDate(selectedDate)}.`);
   };
 
+  const getDraftWindow = () => {
+    const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(draftTime.trim());
+    const startAt = new Date(`${selectedDate}T09:00:00`);
+    if (match) {
+      let hour = Number(match[1]) % 12;
+      if (match[3].toUpperCase() === "PM") hour += 12;
+      startAt.setHours(hour, Number(match[2]), 0, 0);
+    }
+    return { startAt, endAt: new Date(startAt.getTime() + 60 * 60 * 1000) };
+  };
+
+  const saveLinkedCalendarEvent = () => {
+    const title = draftTitle.trim();
+    const linkedCalendarId = linkedCalendars.data?.[0]?.id;
+    if (!title || !linkedCalendarId || !readiness.data?.googleOAuthReady) return;
+    const { startAt, endAt } = getDraftWindow();
+    if (editingPersistedItem?.persistedId) {
+      updatePersistedEvent.mutate({ eventId: editingPersistedItem.persistedId, title, startAt, endAt }, { onSuccess: () => { setToast(`Updated “${title}” in the linked Google calendar.`); setShowComposer(false); setEditingPersistedItem(null); setDraftTitle(""); } });
+      return;
+    }
+    createPersistedEvent.mutate({ linkedCalendarId, title, startAt, endAt }, { onSuccess: () => { setToast(`Added “${title}” to the linked Google calendar.`); setShowComposer(false); setDraftTitle(""); } });
+  };
+
   const addDemoAccount = () => {
     const sequence = connections.length + 1;
     setConnections(current => [...current, { id: `demo-${sequence}`, email: `study.account${sequence}@gmail.com`, kind: "Demo", calendarCount: 1, status: "Demo", lastSync: "Local sample data" }]);
@@ -134,6 +198,17 @@ export default function Home() {
   const simulateSync = () => {
     setConnections(current => current.map(connection => connection.status === "Demo" ? { ...connection, lastSync: "Demo sync complete just now" } : connection));
     setToast("Demo sync complete. Live changes will use Google Calendar watch channels after OAuth activation.");
+  };
+
+  const removePersistedEvent = (item: CalendarItem) => {
+    if (!item.persistedId || !readiness.data?.googleOAuthReady) return;
+    if (!window.confirm(`Remove “${item.title}” from the linked Google calendar?`)) return;
+    deletePersistedEvent.mutate({ eventId: item.persistedId }, { onSuccess: () => setToast(`Removed “${item.title}” from the linked Google calendar.`) });
+  };
+
+  const beginPersistedEdit = (item: CalendarItem) => {
+    if (!item.persistedId) return;
+    setSelectedDate(item.date); setDraftTitle(item.title); setDraftTime(item.time || "09:00 AM"); setEditingPersistedItem(item); setSaveToLinkedCalendar(true); setShowComposer(true);
   };
 
   return (
@@ -165,20 +240,20 @@ export default function Home() {
           <section className="calendar-card">
             <div className="calendar-toolbar"><div className="month-switch"><button disabled={activeMonthIndex === 0} onClick={() => changeMonth(-1)} aria-label="Previous month"><ChevronLeft size={18} /></button><h2>{MONTHS[activeMonthIndex]}</h2><button disabled={activeMonthIndex === MONTHS.length - 1} onClick={() => changeMonth(1)} aria-label="Next month"><ChevronRight size={18} /></button></div><div className="month-jumps">{MONTHS.map((month, index) => <button key={month} className={index === activeMonthIndex ? "is-active" : ""} onClick={() => chooseMonth(index)}>{month.slice(0, 3)}</button>)}</div></div>
             <div className="calendar-content"><section className="month-grid"><div className="weekday-labels">{WEEKDAYS.map(day => <span key={day}>{day}</span>)}</div><div className="date-board">{calendarDays.map((day, index) => { if (!day) return <div key={`empty-${index}`} className="date-box is-empty" />; const key = dateKey(activeMonth, day); const items = allItems.filter(item => item.date === key); return <button key={key} className={`date-box ${key === selectedDate ? "is-selected" : ""}`} onClick={() => setSelectedDate(key)}><b>{day}</b>{items.length > 0 && <span className="date-dots">{items.slice(0, 3).map(item => <i key={item.id} className={`dot-${item.category}`} />)}</span>}</button>; })}</div><div className="legend"><span><i className="dot-critical" />Critical</span><span><i className="dot-quiz" />Quiz</span><span><i className="dot-focus" />Focus</span><span><i className="dot-recovery" />Recovery</span></div></section>
-              <aside className="day-card"><div className="paper-tabs"><i /><i /><i /></div><p className="eyebrow"><ListChecks size={14} /> Selected day</p><h3>{formatDate(selectedDate)}</h3><div className="day-items">{selectedItems.length ? selectedItems.map(item => <article key={item.id} className={`item-card item-${item.category}`}><span>{categoryLabel[item.category]} {item.time ? `· ${item.time}` : ""}</span><strong>{item.title}</strong><small>{item.source}</small></article>) : <p className="empty-state">No event is scheduled. Add a study block or select another marked date.</p>}</div><div className="section-rule" /><p className="eyebrow"><CalendarDays size={14} /> This month</p><div className="month-list">{monthItems.slice(0, 5).map(item => <button key={item.id} onClick={() => setSelectedDate(item.date)}><i className={`dot-${item.category}`} /><span>{item.title}</span><ArrowRight size={14} /></button>)}</div></aside></div>
+              <aside className="day-card"><div className="paper-tabs"><i /><i /><i /></div><p className="eyebrow"><ListChecks size={14} /> Selected day</p><h3>{formatDate(selectedDate)}</h3>{linkedEventDisplayState === "loading" ? <p className="inline-status">Loading linked calendar events…</p> : null}{linkedEventDisplayState === "empty" ? <p className="inline-status">No linked Google events are available yet. Your academic plan and local demo events remain unchanged.</p> : null}{linkedEventDisplayState === "error" ? <p className="inline-status is-error">Linked events could not load. Your academic plan remains available.</p> : null}<div className="day-items">{selectedItems.length ? selectedItems.map(item => <article key={item.id} className={`item-card item-${item.category}`}><span>{categoryLabel[item.category]} {item.time ? `· ${item.time}` : ""}</span><strong>{item.title}</strong><small>{item.source}</small>{item.persistedId ? <div className="event-actions"><button onClick={() => beginPersistedEdit(item)} disabled={!readiness.data?.googleOAuthReady}>Edit</button><button onClick={() => removePersistedEvent(item)} disabled={!readiness.data?.googleOAuthReady || deletePersistedEvent.isPending}>Remove</button>{!readiness.data?.googleOAuthReady ? <em>Google OAuth required</em> : null}</div> : null}</article>) : <p className="empty-state">No event is scheduled. Add a study block or select another marked date.</p>}</div><div className="section-rule" /><p className="eyebrow"><CalendarDays size={14} /> This month</p><div className="month-list">{monthItems.slice(0, 5).map(item => <button key={item.id} onClick={() => setSelectedDate(item.date)}><i className={`dot-${item.category}`} /><span>{item.title}</span><ArrowRight size={14} /></button>)}</div></aside></div>
           </section>
         </>}
 
-        {activeSection === "accounts" && <section className="workspace-panel"><div className="panel-heading"><div><p className="eyebrow"><CirclePlus size={14} /> Multiple Google identities</p><h1>Connected accounts</h1><p>Each app user can link personal Google and eligible Workspace calendars. These are local demo connections until the app owner activates Google OAuth.</p></div><button className="accent-button" onClick={() => setShowAccountSheet(true)}><Plus size={16} /> Add demo account</button></div><div className="account-stack">{connections.map(connection => <article key={connection.id} className="account-row"><div className="account-monogram">{connection.email.charAt(0).toUpperCase()}</div><div className="account-main"><strong>{connection.email}</strong><span>{connection.kind} · {connection.calendarCount} calendar{connection.calendarCount === 1 ? "" : "s"} available</span></div><div className={`status-pill ${connection.status === "Connected" ? "connected" : "demo"}`}>{connection.status}</div><small>{connection.lastSync}</small></article>)}</div><div className="activation-note"><ShieldCheck size={18} /><div><strong>What activates later</strong><p>Real Google sign-in, secure token storage, calendar selection, and automatic change notifications are prepared but need your Google Cloud OAuth client before accessing any external account.</p></div></div></section>}
+        {activeSection === "accounts" && <section className="workspace-panel"><div className="panel-heading"><div><p className="eyebrow"><CirclePlus size={14} /> Multiple Google identities</p><h1>Connected accounts</h1><p>Each app user can link personal Google and eligible Workspace calendars. Local demonstration accounts remain separate from any persisted Google connection.</p></div><button className="accent-button" onClick={() => setShowAccountSheet(true)}><Plus size={16} /> Add account</button></div><div className="account-stack">{shownConnections.map(connection => <article key={connection.id} className="account-row"><div className="account-monogram">{connection.email.charAt(0).toUpperCase()}</div><div className="account-main"><strong>{connection.email}</strong><span>{connection.kind} · {connection.calendarCount} calendar{connection.calendarCount === 1 ? "" : "s"} available</span></div><div className={`status-pill ${connection.status === "Connected" ? "connected" : "demo"}`}>{connection.status}</div><small>{connection.lastSync}</small></article>)}</div><div className="activation-note"><ShieldCheck size={18} /><div><strong>{readiness.data?.googleOAuthReady ? "Google linking is ready" : "What activates later"}</strong><p>{readiness.data?.googleOAuthReady ? "Use the account action to continue through Google’s normal sign-in page, then select the calendars you want to use." : "Real Google sign-in, secure token storage, calendar selection, and automatic change notifications are prepared but need your Google Cloud OAuth client before accessing any external account."}</p></div></div></section>}
 
         {activeSection === "sync" && <section className="workspace-panel"><div className="panel-heading"><div><p className="eyebrow"><CloudCog size={14} /> Automatic synchronization</p><h1>Sync center</h1><p>Demo actions validate the app experience without making requests to Google. The production path will use incremental sync tokens and Google Calendar watch channels.</p></div><button className="accent-button" onClick={simulateSync}><RefreshCw size={16} /> Run demo sync</button></div><div className="sync-grid"><article><span>Connection state</span><strong>{connections.filter(connection => connection.status === "Demo").length} demo profile{connections.filter(connection => connection.status === "Demo").length === 1 ? "" : "s"}</strong><p>Ready to be swapped for authorized Google identities.</p></article><article><span>Event cache</span><strong>{allItems.length} local events</strong><p>Includes academic-plan events and events you add in this session.</p></article><article><span>Watch channels</span><strong>Prepared, inactive</strong><p>They begin only after the public HTTPS callback and OAuth client are configured.</p></article></div><div className="sync-timeline"><div><i className="dot-focus" /><span>1</span><p>Full calendar import</p></div><div><i className="dot-focus" /><span>2</span><p>Store sync token</p></div><div><i className="dot-focus" /><span>3</span><p>Receive change signal</p></div><div><i className="dot-focus" /><span>4</span><p>Incremental refresh</p></div></div></section>}
 
         {activeSection === "spark" && <section className="workspace-panel spark-panel"><div className="panel-heading"><div><p className="eyebrow"><Sparkles size={14} /> Agent-ready calendar</p><h1>Gemini Spark connection</h1><p>The app now exposes safe, read-only demonstration calendar tools through an MCP route. Live write actions remain inactive until Google OAuth is configured.</p></div><span className="status-pill demo">Demo endpoint ready</span></div><div className="spark-layout"><div className="spark-tools"><h3>Available now</h3><p><Check size={15} /> List the included academic deadlines.</p><p><Check size={15} /> Report the Google activation state clearly.</p><h3 className="planned-tools">Prepared for activation</h3><p><Check size={15} /> Create, update, or remove a study block.</p><p><Check size={15} /> Summarize selected calendar milestones.</p></div><div className="mcp-box"><span>Demonstration MCP route</span><code>/api/mcp</code><button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/api/mcp`); setToast("The current MCP route was copied. It only returns safe demonstration data until activation."); }}><Copy size={15} /> Copy this app's MCP URL</button><small>Gemini Spark users add the eventual public URL in Connected Apps. Google may require write confirmations.</small></div></div><a className="reference-link" href="https://support.google.com/gemini/answer/17209137" target="_blank" rel="noreferrer">Review Gemini Spark custom app requirements <ExternalLink size={14} /></a></section>}
       </main>
 
-      {showComposer && <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowComposer(false)}><div className="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="event-title" onMouseDown={event => event.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow"><Plus size={14} /> Demo calendar</p><h2 id="event-title">Add a study event</h2></div><button className="icon-button" onClick={() => setShowComposer(false)} aria-label="Close"><X size={18} /></button></div><label>Selected date<input value={formatDate(selectedDate)} readOnly /></label><label>Title<input autoFocus value={draftTitle} onChange={event => setDraftTitle(event.target.value)} placeholder="e.g. DSA practice set" /></label><div className="form-row"><label>Time<input value={draftTime} onChange={event => setDraftTime(event.target.value)} /></label><label>Type<select value={draftCategory} onChange={event => setDraftCategory(event.target.value as Category)}><option value="focus">Focus block</option><option value="quiz">Quiz</option><option value="critical">Critical</option><option value="recovery">Recovery</option></select></label></div><button className="accent-button full" onClick={addEvent}><Plus size={16} /> Add to demo calendar</button></div></div>}
+      {showComposer && <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowComposer(false)}><div className="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="event-title" onMouseDown={event => event.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow"><Plus size={14} /> {saveToLinkedCalendar ? "Linked calendar" : "Demo calendar"}</p><h2 id="event-title">{editingPersistedItem ? "Edit study event" : "Add a study event"}</h2></div><button className="icon-button" onClick={() => { setShowComposer(false); setEditingPersistedItem(null); }} aria-label="Close"><X size={18} /></button></div><label>Selected date<input value={formatDate(selectedDate)} readOnly /></label><label>Title<input autoFocus value={draftTitle} onChange={event => setDraftTitle(event.target.value)} placeholder="e.g. DSA practice set" /></label><div className="form-row"><label>Time<input value={draftTime} onChange={event => setDraftTime(event.target.value)} /></label><label>Type<select value={draftCategory} onChange={event => setDraftCategory(event.target.value as Category)}><option value="focus">Focus block</option><option value="quiz">Quiz</option><option value="critical">Critical</option><option value="recovery">Recovery</option></select></label></div><label className="link-mode"><input type="checkbox" checked={saveToLinkedCalendar} onChange={event => setSaveToLinkedCalendar(event.target.checked)} disabled={!readiness.data?.googleOAuthReady || !linkedCalendars.data?.length} /> Save to linked Google calendar {!readiness.data?.googleOAuthReady || !linkedCalendars.data?.length ? "(unavailable in demo mode)" : ""}</label>{saveToLinkedCalendar && readiness.data?.googleOAuthReady ? <button className="accent-button full" onClick={saveLinkedCalendarEvent} disabled={createPersistedEvent.isPending || updatePersistedEvent.isPending}><Plus size={16} /> {editingPersistedItem ? "Save Google calendar event" : "Add to Google calendar"}</button> : <button className="accent-button full" onClick={addEvent}><Plus size={16} /> Add to demo calendar</button>}</div></div>}
 
-      {showAccountSheet && <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowAccountSheet(false)}><div className="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="account-title" onMouseDown={event => event.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow"><CirclePlus size={14} /> Account link</p><h2 id="account-title">Add a calendar account</h2></div><button className="icon-button" onClick={() => setShowAccountSheet(false)} aria-label="Close"><X size={18} /></button></div><div className="activation-card"><ShieldCheck size={20} /><div><strong>Real Google sign-in is waiting for activation.</strong><p>Once the app owner adds Google OAuth credentials, this screen opens Google’s normal sign-in page instead of creating a local profile.</p></div></div><button className="accent-button full" onClick={addDemoAccount}><Plus size={16} /> Add another local demo account</button><button className="quiet-button full" onClick={() => { setShowAccountSheet(false); setToast("Google connection remains safely inactive until owner credentials are added."); }}>Keep demo mode</button></div></div>}
+      {showAccountSheet && <div className="modal-backdrop" role="presentation" onMouseDown={() => setShowAccountSheet(false)}><div className="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="account-title" onMouseDown={event => event.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow"><CirclePlus size={14} /> Account link</p><h2 id="account-title">Add a calendar account</h2></div><button className="icon-button" onClick={() => setShowAccountSheet(false)} aria-label="Close"><X size={18} /></button></div><div className="activation-card"><ShieldCheck size={20} /><div><strong>{readiness.data?.googleOAuthReady ? "Continue through Google" : "Real Google sign-in is waiting for activation."}</strong><p>{readiness.data?.googleOAuthReady ? "Choose or create a Google account in Google’s own sign-in flow. Sign in creates an app account; connect adds another calendar identity." : "Once the app owner adds Google OAuth credentials, this screen opens Google’s normal sign-in page instead of creating a local profile."}</p></div></div>{readiness.data?.googleOAuthReady ? <button className="accent-button full" onClick={() => { window.location.href = isAuthenticated ? "/api/google/connect" : "/api/google/sign-in"; }}><ExternalLink size={16} /> {isAuthenticated ? "Link Google calendar" : "Continue with Google"}</button> : <button className="quiet-button full" disabled>Google OAuth needs owner credentials</button>}<button className="accent-button full" onClick={addDemoAccount}><Plus size={16} /> Add another local demo account</button><button className="quiet-button full" onClick={() => { setShowAccountSheet(false); setToast("Google connection remains safely inactive until owner credentials are added."); }}>Keep demo mode</button></div></div>}
     </div>
   );
 }

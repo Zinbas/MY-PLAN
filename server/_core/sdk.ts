@@ -289,6 +289,14 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
+    // Google-created app accounts are stored locally after Google's callback. They are valid
+    // signed sessions but cannot be introspected through the Manus OAuth service.
+    if (sessionUserId.startsWith("google:")) {
+      if (!user) throw ForbiddenError("Google session user not found");
+      await db.upsertUser({ openId: user.openId, lastSignedIn: signedInAt });
+      return user;
+    }
+
     // If user not in DB, sync from OAuth server automatically
     if (!user) {
       try {

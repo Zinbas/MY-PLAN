@@ -1,0 +1,1 @@
+ALTER TABLE `googleOAuthStates` MODIFY COLUMN `userId` int;

@@ -36,6 +36,7 @@ export const calendarConnections = mysqlTable("calendarConnections", {
   scopes: text("scopes"),
   encryptedAccessToken: text("encryptedAccessToken"),
   encryptedRefreshToken: text("encryptedRefreshToken"),
+  accessTokenExpiresAt: timestamp("accessTokenExpiresAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [
@@ -106,7 +107,7 @@ export const calendarWatchChannels = mysqlTable("calendarWatchChannels", {
 /** Short-lived, one-time CSRF binding for a Google OAuth link attempt. */
 export const googleOAuthStates = mysqlTable("googleOAuthStates", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: int("userId").references(() => users.id, { onDelete: "cascade" }),
   stateHash: varchar("stateHash", { length: 128 }).notNull().unique(),
   expiresAt: timestamp("expiresAt").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

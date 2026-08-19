@@ -68,7 +68,7 @@ export function decryptGoogleCredential(payload: string, keyMaterial = process.e
 }
 
 export type GoogleTokenResponse = { access_token: string; refresh_token?: string; scope?: string; token_type: string; expires_in: number };
-export type GoogleProfile = { sub: string; email: string; hd?: string };
+export type GoogleProfile = { sub: string; email: string; name?: string; hd?: string };
 
 export async function exchangeGoogleAuthorizationCode(config: Required<GoogleOAuthConfig>, code: string): Promise<GoogleTokenResponse> {
   const body = new URLSearchParams({ code, client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, grant_type: "authorization_code" });

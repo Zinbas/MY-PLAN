@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { calendarConnections, googleOAuthStates, InsertUser, users } from "../drizzle/schema";
+import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, syncedEvents, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,7 +89,7 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-export async function createGoogleOAuthState(userId: number, stateHash: string, expiresAt: Date) {
+export async function createGoogleOAuthState(userId: number | null, stateHash: string, expiresAt: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   await db.insert(googleOAuthStates).values({ userId, stateHash, expiresAt });
@@ -113,6 +113,7 @@ export async function upsertGoogleCalendarConnection(input: {
   scopes: string | null;
   encryptedAccessToken: string;
   encryptedRefreshToken: string | null;
+  accessTokenExpiresAt: Date | null;
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -124,8 +125,128 @@ export async function upsertGoogleCalendarConnection(input: {
       scopes: input.scopes,
       encryptedAccessToken: input.encryptedAccessToken,
       encryptedRefreshToken: input.encryptedRefreshToken,
+      accessTokenExpiresAt: input.accessTokenExpiresAt,
     },
   });
   const result = await db.select().from(calendarConnections).where(and(eq(calendarConnections.userId, input.userId), eq(calendarConnections.email, input.email))).limit(1);
   return result[0];
+}
+
+export async function listUserCalendarConnections(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const connections = await db.select().from(calendarConnections).where(eq(calendarConnections.userId, userId));
+  const calendars = connections.length
+    ? await db.select().from(linkedCalendars)
+    : [];
+  return connections.map(connection => ({
+    ...connection,
+    calendars: calendars.filter(calendar => calendar.connectionId === connection.id).map(calendar => ({
+      id: calendar.id,
+      summary: calendar.summary,
+      accessRole: calendar.accessRole,
+      isPrimary: calendar.isPrimary,
+      isVisible: calendar.isVisible,
+    })),
+  }));
+}
+
+export async function getOwnedCalendarConnection(userId: number, connectionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return (await db.select().from(calendarConnections).where(and(eq(calendarConnections.userId, userId), eq(calendarConnections.id, connectionId))).limit(1))[0];
+}
+
+export async function upsertLinkedCalendar(input: { connectionId: number; externalCalendarId: string; summary: string; timeZone: string | null; color: string | null; accessRole: string | null; isPrimary: boolean; isVisible: boolean }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(linkedCalendars).values(input).onDuplicateKeyUpdate({ set: { summary: input.summary, timeZone: input.timeZone, color: input.color, accessRole: input.accessRole, isPrimary: input.isPrimary, isVisible: input.isVisible } });
+  return (await db.select().from(linkedCalendars).where(and(eq(linkedCalendars.connectionId, input.connectionId), eq(linkedCalendars.externalCalendarId, input.externalCalendarId))).limit(1))[0];
+}
+
+export async function listOwnedLinkedCalendars(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const connections = await db.select().from(calendarConnections).where(eq(calendarConnections.userId, userId));
+  if (!connections.length) return [];
+  const calendars = await db.select().from(linkedCalendars);
+  return calendars.filter(calendar => connections.some(connection => connection.id === calendar.connectionId));
+}
+
+export async function upsertSyncedEvent(linkedCalendarId: number, event: { externalEventId: string; title: string; description: string | null; startAt: Date; endAt: Date; isAllDay: boolean; eventStatus: string; isDeleted: boolean; googleUpdatedAt: Date | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(syncedEvents).values({ linkedCalendarId, ...event }).onDuplicateKeyUpdate({ set: { title: event.title, description: event.description, startAt: event.startAt, endAt: event.endAt, isAllDay: event.isAllDay, eventStatus: event.eventStatus, isDeleted: event.isDeleted, googleUpdatedAt: event.googleUpdatedAt } });
+}
+
+export async function listUserSyncedEvents(userId: number, startAt: Date, endAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const calendars = await listOwnedLinkedCalendars(userId);
+  if (!calendars.length) return [];
+  const rows = await db.select().from(syncedEvents).where(and(gte(syncedEvents.endAt, startAt), lte(syncedEvents.startAt, endAt)));
+  return rows.filter(event => calendars.some(calendar => calendar.id === event.linkedCalendarId) && !event.isDeleted);
+}
+
+export async function getOwnedLinkedCalendar(userId: number, linkedCalendarId: number) {
+  const calendars = await listOwnedLinkedCalendars(userId);
+  return calendars.find(calendar => calendar.id === linkedCalendarId);
+}
+
+export async function getUserSyncedEvent(userId: number, eventId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const event = (await db.select().from(syncedEvents).where(eq(syncedEvents.id, eventId)).limit(1))[0];
+  if (!event) return undefined;
+  const calendar = await getOwnedLinkedCalendar(userId, event.linkedCalendarId);
+  return calendar ? { event, calendar } : undefined;
+}
+
+export async function setCalendarSyncState(linkedCalendarId: number, input: { nextSyncToken?: string | null; syncStatus: "idle" | "syncing" | "healthy" | "attention"; lastError?: string | null; lastSyncedAt?: Date | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(calendarSyncStates).values({ linkedCalendarId, ...input }).onDuplicateKeyUpdate({ set: input });
+}
+
+export async function getWatchChannel(channelId: string, verificationToken: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return (await db.select().from(calendarWatchChannels).where(and(eq(calendarWatchChannels.channelId, channelId), eq(calendarWatchChannels.verificationToken, verificationToken))).limit(1))[0];
+}
+
+export async function getLinkedCalendarById(linkedCalendarId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return (await db.select().from(linkedCalendars).where(eq(linkedCalendars.id, linkedCalendarId)).limit(1))[0];
+}
+
+export async function getCalendarConnectionById(connectionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return (await db.select().from(calendarConnections).where(eq(calendarConnections.id, connectionId)).limit(1))[0];
+}
+
+export async function updateConnectionAccessToken(connectionId: number, encryptedAccessToken: string, accessTokenExpiresAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(calendarConnections).set({ encryptedAccessToken, accessTokenExpiresAt, status: "connected" }).where(eq(calendarConnections.id, connectionId));
+}
+
+export async function getSyncState(linkedCalendarId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return (await db.select().from(calendarSyncStates).where(eq(calendarSyncStates.linkedCalendarId, linkedCalendarId)).limit(1))[0];
+}
+
+export async function upsertWatchChannel(input: { linkedCalendarId: number; channelId: string; resourceId: string; verificationToken: string; expiresAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(calendarWatchChannels).values(input).onDuplicateKeyUpdate({ set: { resourceId: input.resourceId, verificationToken: input.verificationToken, expiresAt: input.expiresAt } });
+}
+
+export async function listExpiringWatchChannels(before: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const rows = await db.select().from(calendarWatchChannels);
+  return rows.filter(channel => channel.expiresAt <= before);
 }
