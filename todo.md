@@ -2,6 +2,15 @@
 
 **Selected build:** Full automatic synchronization with Google Calendar and Workspace accounts.
 
+- [x] Research ongoing calendar-app needs from public product feedback, including Reddit discussions and established calendar products.
+- [x] Define a feature plan for unrestricted future dates, recurring views, search, productivity controls, and mobile usability.
+- [x] Confirm the ongoing-calendar feature plan is recorded in the project documentation before implementation.
+- [x] Replace the fixed August–December 2026 calendar with ongoing month, week, and agenda navigation.
+- [x] Add prioritized calendar features based on research findings while preserving the existing integration foundation.
+- [x] Test unrestricted navigation and new calendar workflows; fix defects found.
+- [x] Exercise and verify every desktop calendar button, navigation path, filter, view mode, planner action, and integration-section control.
+- [x] Exercise and verify every mobile navigation, responsive control, calendar action, and dialog behavior.
+
 - [x] Identify the Google agent-style Spark product and confirm its official integration surface.
 - [x] Inspect available connector configuration and Google account integration options.
 - [ ] Obtain user-owned Google OAuth credentials and consent-screen configuration before enabling live Google account linking.
@@ -26,4 +35,4 @@
 - [x] Add the validated Google Spark integration or document a feasible alternative if no public integration exists.
 - [x] Run type checks, builds, and end-to-end flow verification; fix defects found.
 - [x] Complete all credential-free work autonomously before requesting the user’s Google OAuth activation inputs.
-- [ ] Save a checkpoint and deliver the verified application.
+- [x] Save a checkpoint and deliver the verified application foundation for review.

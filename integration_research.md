@@ -43,3 +43,16 @@ The full implementation therefore needs a server, database, encrypted token stor
 
 12. https://developers.google.com/workspace/calendar/api/guides/push
 13. https://developers.google.com/workspace/calendar/api/v3/reference/events/watch
+
+## Calendar Experience Research — Public User Discussions
+
+Public discussions indicate that people value calendar systems that feel flexible rather than rigid. A thread in r/productivity explicitly calls for easy drag-and-drop rescheduling and month-view duplication, while another participant asks for weekday-aware multi-day events that do not incorrectly include weekends. The same discussion requests optional visual differentiation for days such as holidays without confusing those markers with user-created events.
+
+A separate r/ProductivityApps discussion highlights a frequent overlap between calendar and task behavior: users want to mark scheduled items complete and keep checkable items inside an event. The accompanying poll calls out forgetting or failing to update events, overlapping appointments, and manual typing as calendar-management pain points.
+
+The expanded MY PLAN feature plan should therefore prioritize unrestricted date navigation, a fast “go to today” path, month/week/agenda views, recurring patterns, event completion, in-event checklists, unobtrusive event categories, conflict awareness, search, and rapid rescheduling. These complement rather than replace the app’s academic planning features and Google synchronization foundation.
+
+## Additional Sources
+
+14. https://www.reddit.com/r/productivity/comments/1gh4fhg/whats_your_biggest_frustration_with_calendar_apps/
+15. https://www.reddit.com/r/ProductivityApps/comments/1iad038/whats_the_most_frustrating_part_about_managing/
