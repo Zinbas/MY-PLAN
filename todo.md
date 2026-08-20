@@ -63,3 +63,23 @@
 - [x] Add an in-app feature tutorial with a dismissible, accessible walkthrough.
 - [x] Improve mobile navigation, action access, readability, and touch-friendly planning controls.
 - [x] Add desktop and mobile regression coverage for the expanded workspaces, onboarding, progress, and tutorial flows.
+
+- [x] Add a polished desktop date right-click context menu for creating a task, event, or focus block on that date.
+- [x] Keep previous and next month controls visibly available without hover dependence on desktop and mobile.
+- [x] Fix the mobile tutorial action labels so Next, Back, and Finish tour remain visible and touch-friendly.
+- [x] Add desktop and mobile regression coverage for the date context menu, persistent month navigation, and tutorial action visibility.
+- [x] Add an active-task timer with pause, resume, and finish controls that appears when a task is started.
+- [x] Audit and correct all primary actions so labels remain visible and high-contrast without hover on desktop and mobile.
+- [x] Add regression coverage for active-task timer lifecycle and persistent primary-control visibility.
+- [x] Modernize MY PLAN’s surface hierarchy, micro-interactions, and motion while preserving the Paper Field Notes identity.
+- [x] Visually verify the refined desktop and mobile interface for readability, control hierarchy, and touch ergonomics.
+- [x] Prioritize a polished desktop and laptop composition while maintaining feature parity and quality on mobile.
+- [x] Research and add a rotating daily quote suited to common student and professional planning needs.
+- [x] Retire the Welcome destination after sign-in or completed full tutorial, routing users directly into their planning workspace.
+- [x] Add regression coverage for daily quote rotation and Welcome retirement after sign-in or full-tour completion.
+- [x] Add a press-and-hold date action sheet on mobile that matches the desktop right-click task, event, and focus-block menu.
+- [x] Add desktop and mobile regression coverage for equivalent date-action menus and mobile long-press gesture behavior.
+- [x] Research and add a rotating daily quote suited to common student and professional planning needs.
+- [x] Hide the Welcome destination after a user signs in and route signed-in users directly to their active planning workspace.
+- [x] Add regression coverage for daily quote rotation and the signed-in Welcome-routing behavior.
+- [x] Add deterministic cross-day regression coverage proving the daily quote remains stable within a day and changes for a different calendar day.
