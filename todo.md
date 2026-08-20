@@ -2,6 +2,11 @@
 
 **Selected build:** Full automatic synchronization with Google Calendar and Workspace accounts.
 
+- [x] Replace browser-native month/year and source-filter controls with MY PLAN-styled mobile controls.
+- [x] Make the mobile menu a transparent, dismissible overlay that keeps the calendar visible behind it.
+- [x] Close the mobile menu after every sidebar navigation action and make the MY PLAN brand return to the calendar home screen.
+- [x] Test the corrected mobile controls, menu dismissal, and home-navigation flow.
+
 - [x] Research ongoing calendar-app needs from public product feedback, including Reddit discussions and established calendar products.
 - [x] Define a feature plan for unrestricted future dates, recurring views, search, productivity controls, and mobile usability.
 - [x] Confirm the ongoing-calendar feature plan is recorded in the project documentation before implementation.
