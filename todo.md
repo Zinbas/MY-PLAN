@@ -41,3 +41,11 @@
 - [x] Run type checks, builds, and end-to-end flow verification; fix defects found.
 - [x] Complete all credential-free work autonomously before requesting the user’s Google OAuth activation inputs.
 - [x] Save a checkpoint and deliver the verified application foundation for review.
+
+- [x] Research calendar and academic-planning feature requests from public product documentation and Reddit discussions.
+- [x] Add event creation, editing, deletion, rescheduling, and detail workflows to MY PLAN.
+- [x] Add a focused task workflow with due dates, priorities, completion state, and calendar placement.
+- [x] Add an actionable daily planning surface that combines tasks and scheduled study blocks.
+- [x] Refine hover, pointer-exit, and popover behavior so dismissed controls do not unexpectedly reopen.
+- [x] Add automated coverage for the expanded event, task, and interaction workflows on desktop and mobile.
+- [x] Render saved personal-event course/list and notes details in the calendar workflow, with desktop and mobile regression coverage.

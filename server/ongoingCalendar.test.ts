@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonths, daysInMonth, startOfWeek } from "../client/src/lib/ongoingCalendar";
+import { addMonths, daysInMonth, isTaskScheduled, startOfWeek, taskEndAt } from "../client/src/lib/ongoingCalendar";
 
 describe("ongoing calendar navigation", () => {
   it("moves across year boundaries without a fixed semester limit", () => {
@@ -12,5 +12,24 @@ describe("ongoing calendar navigation", () => {
     expect(grid).toHaveLength(35);
     expect(grid.filter(Boolean)).toHaveLength(31);
     expect(startOfWeek(new Date(2026, 7, 12))).toEqual(new Date(2026, 7, 10));
+  });
+
+  it("keeps a task pending while allowing an explicit calendar time block", () => {
+    const scheduledStartAt = new Date(2031, 4, 10, 18, 30);
+    const task = {
+      id: "task-1",
+      title: "Finish revision notes",
+      dueAt: new Date(2031, 4, 11, 23, 59),
+      priority: "high" as const,
+      course: "Calculus",
+      notes: "",
+      completed: false,
+      scheduledStartAt,
+      durationMinutes: 75,
+    };
+
+    expect(isTaskScheduled(task)).toBe(true);
+    expect(taskEndAt(task)).toEqual(new Date(2031, 4, 10, 19, 45));
+    expect(isTaskScheduled({ ...task, scheduledStartAt: null })).toBe(false);
   });
 });

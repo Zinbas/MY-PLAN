@@ -5,13 +5,39 @@ export type PlannerBlock = {
   title: string;
   startAt: Date;
   endAt: Date;
-  source: "academic" | "planner" | "linked";
+  source: "academic" | "planner" | "linked" | "event" | "task";
   priority?: "high" | "normal";
+  course?: string;
+  notes?: string;
   completed?: boolean;
   repeat?: RepeatRule;
   repeatUntil?: Date | null;
   checklist?: { id: string; label: string; done: boolean }[];
 };
+
+export type PersonalEvent = {
+  id: string;
+  title: string;
+  startAt: Date;
+  endAt: Date;
+  priority: "high" | "normal";
+  course: string;
+  notes: string;
+};
+
+export type PlanTask = {
+  id: string;
+  title: string;
+  dueAt: Date;
+  priority: "high" | "normal";
+  course: string;
+  notes: string;
+  completed: boolean;
+  scheduledStartAt?: Date | null;
+  durationMinutes?: number;
+};
+
+export type CalendarItem = PlannerBlock | PersonalEvent | PlanTask;
 
 export const monthStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
 export const addMonths = (date: Date, amount: number) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
@@ -31,6 +57,13 @@ export const daysInMonth = (cursor: Date) => {
 };
 export const isWithin = (event: PlannerBlock, start: Date, end: Date) => event.endAt >= start && event.startAt < end;
 export const isConflict = (event: PlannerBlock, allEvents: PlannerBlock[]) => allEvents.some(other => other.id !== event.id && other.source === "planner" && event.source === "planner" && event.startAt < other.endAt && event.endAt > other.startAt);
+
+export const isTaskScheduled = (task: PlanTask) => Boolean(task.scheduledStartAt);
+
+export const taskEndAt = (task: PlanTask) => {
+  const start = task.scheduledStartAt ?? task.dueAt;
+  return new Date(start.getTime() + (task.durationMinutes ?? 60) * 60 * 1000);
+};
 
 export function expandRepeatingBlock(block: PlannerBlock, start: Date, end: Date): PlannerBlock[] {
   const result: PlannerBlock[] = [];
