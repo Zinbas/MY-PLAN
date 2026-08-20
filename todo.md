@@ -49,3 +49,17 @@
 - [x] Refine hover, pointer-exit, and popover behavior so dismissed controls do not unexpectedly reopen.
 - [x] Add automated coverage for the expanded event, task, and interaction workflows on desktop and mobile.
 - [x] Render saved personal-event course/list and notes details in the calendar workflow, with desktop and mobile regression coverage.
+- [ ] Keep the Google OAuth testing setup limited to free Calendar API and OAuth resources, without paid Google Cloud products.
+- [ ] Revoke the OAuth client whose secret was accidentally exposed before creating a replacement client and enabling live activation.
+
+- [x] Research student and professional productivity needs across trusted product documentation and public user discussions.
+- [x] Add dedicated To-do and Progress workspaces to the sidebar, while preserving the existing calendar and account sections.
+- [x] Expand the task model with lists, due-date states, priority, task completion history, and progress indicators.
+- [x] Build a welcome screen and first-run onboarding flow that explains MY PLAN’s core workflows.
+- [x] Improve the authentication and account experience with clear signed-out, sign-in, and linked-account states.
+- [x] Complete the first-run tutorial after To-do and Progress are implemented, including replay and dismissal behavior.
+- [x] Add desktop and mobile coverage for first-run display, start-planning dismissal, Welcome return path, and the generic account-state surface.
+- [x] Add explicit regression cases for both signed-out and signed-in account experiences, or revise coverage wording to reflect only the generic account-state checks.
+- [x] Add an in-app feature tutorial with a dismissible, accessible walkthrough.
+- [x] Improve mobile navigation, action access, readability, and touch-friendly planning controls.
+- [x] Add desktop and mobile regression coverage for the expanded workspaces, onboarding, progress, and tutorial flows.

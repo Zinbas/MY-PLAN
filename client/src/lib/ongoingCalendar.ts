@@ -1,4 +1,5 @@
 export type RepeatRule = "none" | "daily" | "weekdays" | "weekly" | "monthly";
+export type TaskStatus = "open" | "in-progress" | "done";
 
 export type PlannerBlock = {
   id: string;
@@ -35,6 +36,9 @@ export type PlanTask = {
   completed: boolean;
   scheduledStartAt?: Date | null;
   durationMinutes?: number;
+  status?: TaskStatus;
+  createdAt?: Date;
+  completedAt?: Date | null;
 };
 
 export type CalendarItem = PlannerBlock | PersonalEvent | PlanTask;
@@ -59,6 +63,22 @@ export const isWithin = (event: PlannerBlock, start: Date, end: Date) => event.e
 export const isConflict = (event: PlannerBlock, allEvents: PlannerBlock[]) => allEvents.some(other => other.id !== event.id && other.source === "planner" && event.source === "planner" && event.startAt < other.endAt && event.endAt > other.startAt);
 
 export const isTaskScheduled = (task: PlanTask) => Boolean(task.scheduledStartAt);
+
+export const isTaskComplete = (task: PlanTask) => task.completed || task.status === "done";
+
+export const taskStatus = (task: PlanTask): TaskStatus => {
+  if (isTaskComplete(task)) return "done";
+  return task.status === "in-progress" ? "in-progress" : "open";
+};
+
+export const taskDueState = (task: PlanTask, now = new Date()) => {
+  if (isTaskComplete(task)) return "completed" as const;
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const due = new Date(task.dueAt.getFullYear(), task.dueAt.getMonth(), task.dueAt.getDate());
+  if (due < today) return "overdue" as const;
+  if (sameDay(due, today)) return "today" as const;
+  return "upcoming" as const;
+};
 
 export const taskEndAt = (task: PlanTask) => {
   const start = task.scheduledStartAt ?? task.dueAt;
