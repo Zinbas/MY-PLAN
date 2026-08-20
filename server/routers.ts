@@ -1,12 +1,14 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, isGoogleOAuthConfigured } from "./googleOAuth";
-import { listOwnedLinkedCalendars, listUserCalendarConnections, listUserSyncedEvents } from "./db";
-import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from "./calendarSync";
+import { getAdminOverview, listOwnedLinkedCalendars, listUserCalendarConnections, listUserSyncedEvents } from "./db";
+import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
+import { getGoogleOAuthConfig } from "./googleOAuth";
+import { extractUploadedSchedule } from "./scheduleImport";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -21,6 +23,15 @@ export const appRouter = router({
       } as const;
     }),
   }),
+  admin: router({
+    status: adminProcedure.query(({ ctx }) => ({
+      isAdmin: true as const,
+      name: ctx.user.name,
+      email: ctx.user.email,
+      role: ctx.user.role,
+    })),
+    overview: adminProcedure.query(() => getAdminOverview()),
+  }),
   calendar: router({
     readiness: publicProcedure.query(() => ({
       mode: isGoogleOAuthConfigured() ? "live" : "demo",
@@ -30,6 +41,12 @@ export const appRouter = router({
     })),
     connections: protectedProcedure.query(({ ctx }) => listUserCalendarConnections(ctx.user.id)),
     linkedCalendars: protectedProcedure.query(({ ctx }) => listOwnedLinkedCalendars(ctx.user.id)),
+    setVisibility: protectedProcedure.input(z.object({ linkedCalendarId: z.number().int().positive(), isVisible: z.boolean() })).mutation(async ({ ctx, input }) => {
+      const config = getGoogleOAuthConfig();
+      if (!isGoogleOAuthConfigured(config)) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Google OAuth is not configured yet." });
+      const callbackUrl = new URL((config as Required<typeof config>).redirectUri).origin + "/api/google/webhooks/calendar";
+      return setGoogleCalendarSelection(ctx.user.id, input.linkedCalendarId, input.isVisible, callbackUrl);
+    }),
     events: protectedProcedure.input(z.object({ startAt: z.date(), endAt: z.date() })).query(({ ctx, input }) => listUserSyncedEvents(ctx.user.id, input.startAt, input.endAt)),
     createEvent: protectedProcedure.input(z.object({ linkedCalendarId: z.number().int().positive(), title: z.string().min(1).max(1024), description: z.string().max(10_000).optional(), startAt: z.date(), endAt: z.date(), isAllDay: z.boolean().optional() })).mutation(async ({ ctx, input }) => {
       if (!isGoogleOAuthConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Google OAuth is not configured yet." });
@@ -44,6 +61,13 @@ export const appRouter = router({
       await deleteCalendarEvent(ctx.user.id, input.eventId);
       return { success: true } as const;
     }),
+  }),
+  schedule: router({
+    extract: protectedProcedure.input(z.object({
+      fileName: z.string().min(1).max(180),
+      mimeType: z.string().min(1).max(160),
+      contentBase64: z.string().min(1).max(14_000_000),
+    })).mutation(({ ctx, input }) => extractUploadedSchedule(ctx.user.id, input)),
   }),
 
   // TODO: add feature routers here, e.g.

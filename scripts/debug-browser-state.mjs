@@ -1,0 +1,11 @@
+const tabs = await fetch("http://127.0.0.1:9222/json").then(response => response.json());
+const page = tabs.find(tab => tab.type === "page");
+if (!page) throw new Error("No browser page available");
+const ws = new WebSocket(page.webSocketDebuggerUrl);
+await new Promise((resolve, reject) => { ws.addEventListener("open", resolve, { once: true }); ws.addEventListener("error", reject, { once: true }); });
+let id = 1;
+const waits = new Map();
+ws.addEventListener("message", event => { const message = JSON.parse(event.data); if (message.id && waits.has(message.id)) { const wait = waits.get(message.id); waits.delete(message.id); wait.resolve(message.result); } });
+const evaluate = expression => new Promise(resolve => { const requestId = id++; waits.set(requestId, { resolve }); ws.send(JSON.stringify({ id: requestId, method: "Runtime.evaluate", params: { expression, returnByValue: true } })); }).then(result => result.result?.value);
+console.log(await evaluate(`JSON.stringify({ heading: document.querySelector('.cursor-controls h2')?.textContent, filter: document.querySelector('.calendar-filters .control-trigger')?.textContent, search: document.querySelector('.search-field input')?.value, storage: Object.fromEntries(Object.keys(localStorage).filter(key => key.startsWith('my-plan-blocks')).map(key => [key, localStorage.getItem(key)])), body: document.body.innerText.slice(-1600), agenda: [...document.querySelectorAll('.agenda-view .ongoing-event')].map(node => node.textContent) })`));
+ws.close();

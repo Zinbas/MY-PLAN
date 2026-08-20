@@ -24,8 +24,10 @@ export async function importGoogleCalendarConnection(userId: number, connectionI
   if (!connection) throw new Error("CONNECTION_NOT_FOUND");
   const accessToken = await getConnectionAccessToken(connection);
   const calendars = await listGoogleCalendars(accessToken);
-  const imported = [] as number[];
+  const existingCalendars = await db.listOwnedLinkedCalendars(userId);
+  const discovered = [] as number[];
   for (const calendar of calendars.filter(calendar => calendar.id && calendar.selected !== false)) {
+    const existing = existingCalendars.find(item => item.connectionId === connectionId && item.externalCalendarId === calendar.id);
     const record = await db.upsertLinkedCalendar({
       connectionId,
       externalCalendarId: calendar.id,
@@ -34,23 +36,39 @@ export async function importGoogleCalendarConnection(userId: number, connectionI
       color: calendar.backgroundColor ?? null,
       accessRole: calendar.accessRole ?? null,
       isPrimary: Boolean(calendar.primary),
-      isVisible: calendar.selected !== false,
+      isVisible: existing?.isVisible ?? false,
     });
     if (!record) continue;
-    imported.push(record.id);
-    await syncGoogleLinkedCalendar(connection, record.id);
-    const channelId = randomUUID();
-    const verificationToken = randomUUID();
-    const watch = await watchGoogleCalendar(accessToken, record.externalCalendarId, callbackUrl, channelId, verificationToken);
-    await db.upsertWatchChannel({ linkedCalendarId: record.id, channelId, verificationToken, resourceId: watch.resourceId, expiresAt: new Date(Number(watch.expiration ?? Date.now() + 24 * 60 * 60 * 1000)) });
+    discovered.push(record.id);
+    if (record.isVisible) await syncSelectedGoogleCalendar(userId, record.id, callbackUrl);
   }
-  return imported;
+  return discovered;
+}
+
+export async function setGoogleCalendarSelection(userId: number, linkedCalendarId: number, isVisible: boolean, callbackUrl: string) {
+  const calendar = await db.setOwnedLinkedCalendarVisibility(userId, linkedCalendarId, isVisible);
+  if (!calendar) throw new Error("CALENDAR_NOT_FOUND");
+  if (isVisible) await syncSelectedGoogleCalendar(userId, linkedCalendarId, callbackUrl);
+  return calendar;
+}
+
+async function syncSelectedGoogleCalendar(userId: number, linkedCalendarId: number, callbackUrl: string) {
+  const calendar = await db.getOwnedLinkedCalendar(userId, linkedCalendarId);
+  if (!calendar || !calendar.isVisible) throw new Error("CALENDAR_NOT_FOUND");
+  const connection = await db.getOwnedCalendarConnection(userId, calendar.connectionId);
+  if (!connection) throw new Error("CONNECTION_NOT_FOUND");
+  await syncGoogleLinkedCalendar(connection, calendar.id);
+  const accessToken = await getConnectionAccessToken(connection);
+  const channelId = randomUUID();
+  const verificationToken = randomUUID();
+  const watch = await watchGoogleCalendar(accessToken, calendar.externalCalendarId, callbackUrl, channelId, verificationToken);
+  await db.upsertWatchChannel({ linkedCalendarId: calendar.id, channelId, verificationToken, resourceId: watch.resourceId, expiresAt: new Date(Number(watch.expiration ?? Date.now() + 24 * 60 * 60 * 1000)) });
 }
 
 export async function syncGoogleLinkedCalendar(connection: NonNullable<Awaited<ReturnType<typeof db.getOwnedCalendarConnection>>>, linkedCalendarId: number) {
   const accessToken = await getConnectionAccessToken(connection);
   const calendars = await db.listOwnedLinkedCalendars(connection.userId);
-  const calendar = calendars.find(item => item.id === linkedCalendarId && item.connectionId === connection.id);
+  const calendar = calendars.find(item => item.id === linkedCalendarId && item.connectionId === connection.id && item.isVisible);
   if (!calendar) throw new Error("CALENDAR_NOT_FOUND");
   await db.setCalendarSyncState(linkedCalendarId, { syncStatus: "syncing", lastError: null });
   try {
@@ -105,7 +123,7 @@ export async function renewExpiringGoogleWatchChannels(callbackUrl: string, befo
   let renewed = 0;
   for (const channel of expiring) {
     const calendar = await db.getLinkedCalendarById(channel.linkedCalendarId);
-    if (!calendar) continue;
+    if (!calendar || !calendar.isVisible) continue;
     const connection = await db.getCalendarConnectionById(calendar.connectionId);
     if (!connection) continue;
     const accessToken = await getConnectionAccessToken(connection);

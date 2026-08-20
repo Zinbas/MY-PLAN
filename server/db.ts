@@ -1,7 +1,7 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, syncedEvents, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { ENV, isAdminGoogleEmail } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -55,7 +55,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
+    } else if (user.openId === ENV.ownerOpenId || isAdminGoogleEmail(user.email)) {
       values.role = 'admin';
       updateSet.role = 'admin';
     }
@@ -151,6 +151,21 @@ export async function listUserCalendarConnections(userId: number) {
   }));
 }
 
+export async function getAdminOverview() {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const [allUsers, connections, calendars] = await Promise.all([
+    db.select({ id: users.id }).from(users),
+    db.select({ id: calendarConnections.id }).from(calendarConnections),
+    db.select({ id: linkedCalendars.id, isVisible: linkedCalendars.isVisible }).from(linkedCalendars),
+  ]);
+  return {
+    accountCount: allUsers.length,
+    connectedAccountCount: connections.length,
+    selectedCalendarCount: calendars.filter(calendar => calendar.isVisible).length,
+  };
+}
+
 export async function getOwnedCalendarConnection(userId: number, connectionId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -173,6 +188,15 @@ export async function listOwnedLinkedCalendars(userId: number) {
   return calendars.filter(calendar => connections.some(connection => connection.id === calendar.connectionId));
 }
 
+export async function setOwnedLinkedCalendarVisibility(userId: number, linkedCalendarId: number, isVisible: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const calendar = await getOwnedLinkedCalendar(userId, linkedCalendarId);
+  if (!calendar) return undefined;
+  await db.update(linkedCalendars).set({ isVisible }).where(eq(linkedCalendars.id, linkedCalendarId));
+  return { ...calendar, isVisible };
+}
+
 export async function upsertSyncedEvent(linkedCalendarId: number, event: { externalEventId: string; title: string; description: string | null; startAt: Date; endAt: Date; isAllDay: boolean; eventStatus: string; isDeleted: boolean; googleUpdatedAt: Date | null }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -182,7 +206,7 @@ export async function upsertSyncedEvent(linkedCalendarId: number, event: { exter
 export async function listUserSyncedEvents(userId: number, startAt: Date, endAt: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const calendars = await listOwnedLinkedCalendars(userId);
+  const calendars = (await listOwnedLinkedCalendars(userId)).filter(calendar => calendar.isVisible);
   if (!calendars.length) return [];
   const rows = await db.select().from(syncedEvents).where(and(gte(syncedEvents.endAt, startAt), lte(syncedEvents.startAt, endAt)));
   return rows.filter(event => calendars.some(calendar => calendar.id === event.linkedCalendarId) && !event.isDeleted);

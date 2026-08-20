@@ -83,3 +83,32 @@
 - [x] Hide the Welcome destination after a user signs in and route signed-in users directly to their active planning workspace.
 - [x] Add regression coverage for daily quote rotation and the signed-in Welcome-routing behavior.
 - [x] Add deterministic cross-day regression coverage proving the daily quote remains stable within a day and changes for a different calendar day.
+
+- [x] Define a single-owner Gmail administrator role with least-privilege permissions and user-specific data boundaries.
+- [ ] Fix and verify protected administrator controls and clear administrator account status in MY PLAN.
+- [x] Restore and verify the getAdminOverview database export so the administrator Accounts panel loads without server-runtime errors.
+- [ ] Sign in as the administrator, open Accounts, and verify the protected overview and status panels render with live data.
+- [ ] Add regression coverage for administrator-only Accounts UI visibility and non-administrator denial of the overview query.
+- [x] Assign the confirmed user-provided Gmail to the administrator role after its MY PLAN account exists.
+- [ ] Complete the secure Google OAuth client configuration and activate the existing Google account-connection flow.
+- [ ] Add regression coverage for administrator authorization and non-administrator access restrictions.
+- [x] Bind the user-confirmed Gmail identity to the MY PLAN administrator role after a successful Google sign-in.
+- [x] Research review-first import of schedule information from images, PDFs, Word documents, spreadsheets, and calendar files.
+- [x] Implement review-first import of schedule information from images, PDFs, Word documents, spreadsheets, and calendar files.
+- [x] Extract candidate dates, routines, deadlines, courses, and events into an editable approval screen before importing.
+- [ ] Validate multi-format schedule import quality, ambiguous-date handling, and calendar/task creation through automated tests.
+- [ ] Preserve the administrator’s existing academic calendar and planning data after administrator sign-in, including first-sign-in local-data migration.
+- [x] Give every non-administrator user a clean private calendar, task, and event workspace that cannot display or alter administrator data.
+- [ ] Add regression coverage for administrator baseline visibility and non-administrator private-workspace isolation.
+- [x] Ensure each user’s Google Calendar connection, selected calendars, mirrored events, and sync actions remain visible and writable only to that user.
+- [ ] Add regression coverage for per-user Google Calendar connection and mirrored-event isolation.
+- [x] Let each signed-in user choose which of their own Google calendars to import and keep synchronized in their private MY PLAN workspace.
+- [x] Scan uploaded PDFs, images, documents, spreadsheets, CSV files, and ICS calendars into editable event, task, and focus-block candidates that create items only after the user approves them.
+- [ ] Add opt-in notification permission, reminder preferences, and user-controlled event, task, focus-block, and selected-calendar reminder delivery.
+- [ ] Use each user’s selected Google Calendar as the primary free reminder channel for approved MY PLAN events and imported schedule items after OAuth activation.
+- [x] Apply consistent rounded corners to MY PLAN panels, cards, controls, popovers, and buttons while preserving the Paper Field Notes aesthetic.
+- [ ] Complete a broader desktop and mobile control-spacing audit for remaining tight wrapping, collisions, and readability issues.
+- [x] Fix the crowded calendar week-header range and adjacent view controls at desktop and mobile widths.
+- [x] Redesign the daily note into a spacious editorial quote treatment with clearer hierarchy and calmer visual balance.
+- [x] Add visible, accessible sidebar open-and-close controls for desktop and mobile navigation.
+- [x] Add subtle, purposeful animations for sidebar state, workspace entrances, calendar controls, cards, import review, and feedback while respecting reduced-motion preferences.
