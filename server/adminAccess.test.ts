@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import { ENV, isAdminGoogleEmail } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
+import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "../client/src/lib/privateWorkspace";
 
 function contextFor(role: "admin" | "user"): TrpcContext {
   return {
@@ -35,5 +36,22 @@ describe("administrator identity and access", () => {
 
   it("rejects the protected administrator overview before a non-administrator can access aggregated account data", async () => {
     await expect(appRouter.createCaller(contextFor("user")).admin.overview()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("shows administrator controls only to an authenticated administrator", () => {
+    expect(canViewAdminControls(false, "admin")).toBe(false);
+    expect(canViewAdminControls(true, "user")).toBe(false);
+    expect(canViewAdminControls(true, "admin")).toBe(true);
+  });
+
+  it("keeps private workspaces isolated and preserves administrator legacy plan records at first sign-in", () => {
+    expect(workspaceScopeFor(false)).toBe("guest");
+    expect(workspaceScopeFor(true, 7)).toBe("user-7");
+    expect(workspaceStorageKey("tasks", "user-7")).not.toBe(workspaceStorageKey("tasks", "user-8"));
+    expect(mergeWorkspaceItemsById([{ id: "legacy-plan", title: "Existing academic plan" }], [{ id: "private-plan", title: "New private plan" }])).toEqual([
+      { id: "legacy-plan", title: "Existing academic plan" },
+      { id: "private-plan", title: "New private plan" },
+    ]);
+    expect(mergeWorkspaceItemsById([{ id: "shared", title: "Legacy value" }], [{ id: "shared", title: "Private value" }])).toEqual([{ id: "shared", title: "Private value" }]);
   });
 });

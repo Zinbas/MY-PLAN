@@ -40,7 +40,14 @@ await command("Page.navigate", { url: "http://127.0.0.1:3000/" });
 await sleep(900);
 const output = [];
 output.push(await capture("calendar"));
-for (const [label, name] of [["To-do", "todo"], ["Progress", "progress"], ["Accounts", "accounts"], ["Sync center", "sync"], ["Import schedule", "import"], ["Gemini Spark", "spark"]]) {
+for (const [label, name] of [["To-do", "todo"], ["Progress", "progress"]]) {
+  await clickText(label);
+  await sleep(150);
+  output.push(await capture(name));
+}
+for (const [label, name] of [["Account center", "accounts"], ["Sync center", "sync"], ["Import schedule", "import"], ["Gemini Spark", "spark"]]) {
+  await clickText("Workspace tools");
+  await sleep(120);
   await clickText(label);
   await sleep(150);
   output.push(await capture(name));
