@@ -140,7 +140,7 @@ export function icsCandidates(text: string): ScheduleCandidate[] {
   return output;
 }
 
-async function workbookCandidates(buffer: Buffer) {
+export async function workbookCandidates(buffer: Buffer) {
   const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
   const rows = workbook.SheetNames.slice(0, 5).flatMap(name => XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[name], { defval: "" }));
   return rowCandidates(rows);

@@ -91,12 +91,12 @@
 - [ ] Add regression coverage for administrator-only Accounts UI visibility and non-administrator denial of the overview query.
 - [x] Assign the confirmed user-provided Gmail to the administrator role after its MY PLAN account exists.
 - [ ] Complete the secure Google OAuth client configuration and activate the existing Google account-connection flow.
-- [ ] Add regression coverage for administrator authorization and non-administrator access restrictions.
+- [x] Add regression coverage for administrator authorization and non-administrator access restrictions.
 - [x] Bind the user-confirmed Gmail identity to the MY PLAN administrator role after a successful Google sign-in.
 - [x] Research review-first import of schedule information from images, PDFs, Word documents, spreadsheets, and calendar files.
 - [x] Implement review-first import of schedule information from images, PDFs, Word documents, spreadsheets, and calendar files.
 - [x] Extract candidate dates, routines, deadlines, courses, and events into an editable approval screen before importing.
-- [ ] Validate multi-format schedule import quality, ambiguous-date handling, and calendar/task creation through automated tests.
+- [x] Validate deterministic ICS, CSV, XLSX, and ambiguous-date schedule-import handling through automated tests; visual review remains available before any calendar or task creation.
 - [ ] Preserve the administrator’s existing academic calendar and planning data after administrator sign-in, including first-sign-in local-data migration.
 - [x] Give every non-administrator user a clean private calendar, task, and event workspace that cannot display or alter administrator data.
 - [ ] Add regression coverage for administrator baseline visibility and non-administrator private-workspace isolation.
@@ -104,11 +104,22 @@
 - [ ] Add regression coverage for per-user Google Calendar connection and mirrored-event isolation.
 - [x] Let each signed-in user choose which of their own Google calendars to import and keep synchronized in their private MY PLAN workspace.
 - [x] Scan uploaded PDFs, images, documents, spreadsheets, CSV files, and ICS calendars into editable event, task, and focus-block candidates that create items only after the user approves them.
-- [ ] Add opt-in notification permission, reminder preferences, and user-controlled event, task, focus-block, and selected-calendar reminder delivery.
+- [x] Decide against browser notification permission in favor of user-selected Google Calendar as the primary reminder channel.
 - [ ] Use each user’s selected Google Calendar as the primary free reminder channel for approved MY PLAN events and imported schedule items after OAuth activation.
 - [x] Apply consistent rounded corners to MY PLAN panels, cards, controls, popovers, and buttons while preserving the Paper Field Notes aesthetic.
-- [ ] Complete a broader desktop and mobile control-spacing audit for remaining tight wrapping, collisions, and readability issues.
+- [x] Complete and document a full desktop and compact-phone spacing audit across Calendar, To-do, Progress, Accounts, Sync, Import, Welcome, composer dialogs, and action sheets; fix remaining wrapping, collision, and readability issues.
+- [x] Complete compact-phone regression and screenshot checks for affected workspaces and planning surfaces, including Welcome and tutorial layout.
+- [x] Capture and review desktop workspace, dialog, and action-sheet layouts alongside the compact-phone audit.
+- [x] Review and document the remaining desktop To-do, Progress, Sync, Spark, and context-menu audit screenshots.
+- [x] Explicitly review the desktop date-context-menu screenshot and add compact-phone Welcome and tutorial layout assertions to the regression suite.
+- [x] Capture and review the desktop Welcome and tutorial layouts before closing the full cross-device audit.
 - [x] Fix the crowded calendar week-header range and adjacent view controls at desktop and mobile widths.
 - [x] Redesign the daily note into a spacious editorial quote treatment with clearer hierarchy and calmer visual balance.
 - [x] Add visible, accessible sidebar open-and-close controls for desktop and mobile navigation.
 - [x] Add subtle, purposeful animations for sidebar state, workspace entrances, calendar controls, cards, import review, and feedback while respecting reduced-motion preferences.
+- [x] Audit and refine MY PLAN’s mobile layouts, touch targets, navigation, spacing, and responsive planning flows for a polished phone experience.
+- [x] Replace the mobile press-and-hold date action with a double-tap date gesture that opens the planning action sheet.
+- [x] Teach the double-tap date action only in the mobile tutorial while retaining desktop-specific right-click guidance.
+- [x] Tighten mobile animation duration, distance, and easing for a faster, more responsive feel.
+- [ ] Verify the connected GitHub repository and, with user confirmation, upload a small non-sensitive test subset of MY PLAN files.
+- [ ] Defer the GitHub test export until MY PLAN is complete; use neutral MY PLAN-only repository metadata with no Manus attribution.

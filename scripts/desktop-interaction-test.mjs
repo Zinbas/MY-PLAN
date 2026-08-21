@@ -34,7 +34,7 @@ if (welcomeAvailable) {
   results.push({ label: 'First-run Welcome workspace renders before calendar entry', status: 'passed' });
   await clickText('Take the 60-sec tour');
   await sleep(100);
-  await assert('Welcome tutorial opens on the Calendar step', `document.body.innerText.includes('Calendar gives your plan a place to live.') && document.body.innerText.includes('1 / 4')`);
+  await assert('Welcome tutorial opens with desktop right-click calendar guidance', `document.body.innerText.includes('Right-click a date to place your plan.') && document.body.innerText.includes('On desktop, right-click any date') && document.body.innerText.includes('1 / 4')`);
   await clickText('Next');
   await sleep(100);
   await assert('Tutorial advances into the To-do workspace', `document.body.innerText.includes('To-do, without the pile.') && document.body.innerText.includes('2 / 4')`);
@@ -125,7 +125,7 @@ await sleep(100);
 await clickFilterOption('All sources');
 await sleep(100);
 await assert('Calendar resets to today before agenda-range planner coverage', `Boolean(document.querySelector('.cursor-controls h2')?.textContent)`);
-await evaluate(`(() => { const day = [...document.querySelectorAll('.month-cell')].find(cell => cell.textContent.trim() === '20'); if (!day) throw new Error('Today cell missing'); day.click(); return true; })()`);
+await evaluate(`(() => { const day = document.querySelector('.month-cell.today'); if (!day) throw new Error('Today cell missing'); day.click(); return true; })()`);
 await sleep(100);
 await clickText('Add block');
 await sleep(100);

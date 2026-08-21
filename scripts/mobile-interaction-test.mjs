@@ -26,9 +26,12 @@ await assert('Mobile navigation trigger is visible', `getComputedStyle(document.
 const mobileWelcomeAvailable = await evaluate(`document.body.innerText.includes('Welcome to') && document.body.innerText.includes('Take the 60-sec tour')`);
 if (mobileWelcomeAvailable) {
   results.push({ label: 'Mobile first-run Welcome workspace renders', status: 'passed' });
+  await assert('Mobile Welcome workspace fits the compact viewport with readable primary actions', `document.documentElement.scrollWidth <= window.innerWidth && [...document.querySelectorAll('.welcome-workspace button')].slice(0, 3).every(button => { const rect = button.getBoundingClientRect(); return rect.width <= window.innerWidth - 20 && rect.height >= 40; })`);
   await clickText('Take the 60-sec tour');
   await sleep(100);
   await assert('Mobile tutorial opens with an accessible dialog', `Boolean(document.querySelector('.tour-card[role="dialog"]')) && document.body.innerText.includes('1 / 4')`);
+  await assert('Mobile tutorial explains the double-tap date action', `document.body.innerText.includes('Double-tap a date to place your plan.') && document.body.innerText.includes('On your phone, double-tap any date')`);
+  await assert('Mobile tutorial card and actions fit the compact viewport', `(() => { const card = document.querySelector('.tour-card'); const actions = [...document.querySelectorAll('.tour-actions button')]; if (!card || actions.length < 2) return false; const rect = card.getBoundingClientRect(); return rect.left >= 0 && rect.right <= window.innerWidth && actions.every(button => button.getBoundingClientRect().height >= 40); })()`);
   await assert('Mobile tutorial primary action keeps a visible Next label without hover', `document.querySelector('.tour-actions .accent')?.textContent.includes('Next') && getComputedStyle(document.querySelector('.tour-actions .accent')).fontSize !== '0px'`);
   await clickText('Next');
   await sleep(100);
@@ -93,11 +96,9 @@ await assert('Mobile agenda view renders', `Boolean(document.querySelector('.age
 await clickText('month');
 await sleep(100);
 await assert('Mobile month view returns', `Boolean(document.querySelector('.month-board'))`);
-await evaluate(`(() => { const day = [...document.querySelectorAll('.month-cell')].find(cell => cell.textContent.trim() === '12'); if (!day) throw new Error('Day missing'); day.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' })); return true; })()`);
-await sleep(600);
-await evaluate(`document.querySelector('.month-cell')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' })); true`);
+await evaluate(`(() => { const day = [...document.querySelectorAll('.month-cell')].find(cell => cell.textContent.trim() === '12'); if (!day) throw new Error('Day missing'); day.click(); day.click(); return true; })()`);
 await sleep(100);
-await assert('Mobile press-and-hold opens the date planning action sheet', `Boolean(document.querySelector('.mobile-date-sheet')) && document.querySelector('.mobile-date-sheet')?.textContent.includes('Add task') && document.querySelector('.mobile-date-sheet')?.textContent.includes('Add event') && document.querySelector('.mobile-date-sheet')?.textContent.includes('Add focus block')`);
+await assert('Mobile double-tap opens the date planning action sheet', `Boolean(document.querySelector('.mobile-date-sheet')) && document.querySelector('.mobile-date-sheet')?.textContent.includes('Add task') && document.querySelector('.mobile-date-sheet')?.textContent.includes('Add event') && document.querySelector('.mobile-date-sheet')?.textContent.includes('Add focus block')`);
 await evaluate(`document.querySelector('.mobile-date-sheet button')?.click(); true`);
 await sleep(100);
 await assert('Mobile date action sheet opens a task composer', `Boolean(document.querySelector('.composer')) && document.body.innerText.includes('Capture the next action')`);
