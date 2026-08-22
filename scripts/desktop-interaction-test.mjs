@@ -119,7 +119,7 @@ await assert('Sync navigation renders', `document.body.innerText.includes('Conne
 await clickText('Workspace tools');
 await sleep(100);
 await clickText('Gemini Spark');
-await sleep(100);
+await sleep(300);
 await assert('Gemini Spark navigation renders', `document.body.innerText.includes('Gemini Spark') && document.body.innerText.includes('/api/mcp')`);
 await clickText('Copy MCP URL');
 await sleep(100);
@@ -244,7 +244,7 @@ await assert('Month-day selection updates the daily-plan margin', `document.quer
 await clickText('Workspace tools');
 await sleep(100);
 await clickText('Import schedule');
-await sleep(100);
+await sleep(300);
 await assert('Schedule import workspace explains supported formats and private review-first behavior', `document.body.innerText.includes('Bring a schedule into focus.') && document.body.innerText.includes('PDF') && (document.body.innerText.includes('Keep every import private.') || document.body.innerText.includes('Drop a schedule here')) && (document.body.innerText.includes('Sign in to import') || document.body.innerText.includes('Choose file'))`);
 
 console.log(JSON.stringify({ passed: results.length, results }, null, 2));

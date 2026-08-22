@@ -26,7 +26,7 @@ type TodoFilter = "all" | "today" | "upcoming" | "overdue" | "completed";
 type TourStep = { title: string; body: string; section: Section; eyebrow: string };
 type DateContextMenu = { date: Date; x: number; y: number };
 type ActiveTaskTimer = { taskId: string; accumulatedSeconds: number; startedAt: number | null };
-type ImportCandidate = { id: string; title: string; kind: ComposerKind; date: string; time: string; durationMinutes: number; course: string; notes: string; confidence: number; approved: boolean };
+type ImportCandidate = { id: string; title: string; kind: ComposerKind; date: string; time: string; durationMinutes: number; course: string; notes: string; weekdays?: number[]; confidence: number; approved: boolean };
 
 const academicEvents: PlannerBlock[] = [
   { id: "assignment", title: "Assignment Submission - I", startAt: new Date(2026, 7, 12, 17), endAt: new Date(2026, 7, 12, 18), source: "academic", priority: "high" },
@@ -325,7 +325,15 @@ export default function Home() {
     setImportMessage(`${ready.length} selected item${ready.length === 1 ? "" : "s"} added to your private MY PLAN workspace.${skipped ? ` ${skipped} selected candidate${skipped === 1 ? " needs" : "s need"} a complete date before it can be added.` : ""} Blank times use 9:00 AM.`);
     setToast(`Imported ${ready.length} selected plan item${ready.length === 1 ? "" : "s"}. Undo is available below.`);
   };
-  const addApprovedImportCandidates = () => importScheduleCandidates(importCandidates.filter(candidate => candidate.approved));
+  const addApprovedImportCandidates = (weeklyStart?: string) => {
+    const selected = importCandidates.filter(candidate => candidate.approved);
+    const needsWeeklyAnchor = selected.some(candidate => candidate.weekdays?.length && !candidate.date);
+    if (needsWeeklyAnchor && !isValidImportDate(weeklyStart || "")) {
+      setImportMessage("Choose a real schedule start date in YYYY-MM-DD format before adding selected weekly timetable classes.");
+      return;
+    }
+    importScheduleCandidates(selected.map(candidate => candidate.weekdays?.length && !candidate.date ? { ...candidate, date: weeklyStart! } : candidate));
+  };
   const undoLastAutomaticImport = () => {
     if (!lastAutoImportIds) return;
     const blockIds = new Set(lastAutoImportIds.blockIds); const eventIds = new Set(lastAutoImportIds.eventIds); const taskIds = new Set(lastAutoImportIds.taskIds);

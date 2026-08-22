@@ -10,20 +10,29 @@ export type SelectedImportCandidate = {
   durationMinutes: number;
   course: string;
   notes: string;
+  weekdays?: number[];
 };
 
 function atImportDate(date: string, time: string) {
   return new Date(`${date}T${time || "09:00"}:00`);
 }
 
+function firstWeeklyOccurrence(date: string, time: string, weekday?: number) {
+  const startAt = atImportDate(date, time);
+  if (weekday == null) return startAt;
+  startAt.setDate(startAt.getDate() + ((weekday - startAt.getDay() + 7) % 7));
+  return startAt;
+}
+
 export function mapSelectedImportCandidates(selected: SelectedImportCandidate[], timestamp: number) {
   const ready = selected.filter(candidate => isValidImportDate(candidate.date));
   const skipped = selected.length - ready.length;
-  const blocks: PlannerBlock[] = ready.filter(candidate => candidate.kind === "block").map((candidate, index) => {
-    const startAt = atImportDate(candidate.date, candidate.time);
-    return { id: `import-block-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), source: "planner", priority: "normal", repeat: "none" as RepeatRule, repeatUntil: null, completed: false, checklist: [] };
+  const blocks: PlannerBlock[] = ready.filter(candidate => candidate.kind === "block" || Boolean(candidate.weekdays?.length)).map((candidate, index) => {
+    const weeklyDay = candidate.weekdays?.[0];
+    const startAt = firstWeeklyOccurrence(candidate.date, candidate.time, weeklyDay);
+    return { id: `import-block-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), source: "planner", priority: "normal", repeat: weeklyDay == null ? "none" as RepeatRule : "weekly" as RepeatRule, repeatUntil: null, completed: false, checklist: [] };
   });
-  const events: PersonalEvent[] = ready.filter(candidate => candidate.kind === "event").map((candidate, index) => {
+  const events: PersonalEvent[] = ready.filter(candidate => candidate.kind === "event" && !candidate.weekdays?.length).map((candidate, index) => {
     const startAt = atImportDate(candidate.date, candidate.time);
     return { id: `import-event-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), priority: "normal", course: candidate.course || "Imported schedule", notes: candidate.notes };
   });

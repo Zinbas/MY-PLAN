@@ -13,6 +13,7 @@ export type ScheduleCandidate = {
   durationMinutes: number;
   course: string;
   notes: string;
+  weekdays: number[];
   confidence: number;
 };
 
@@ -92,6 +93,7 @@ export function rowCandidates(rows: Record<string, unknown>[]): ScheduleCandidat
       durationMinutes: Math.max(15, Math.min(720, Math.round(durationNumber))),
       course: cleanText(readColumn(row, [/course/, /subject/, /class/, /list/])),
       notes: cleanText(readColumn(row, [/note/, /detail/, /description/])),
+      weekdays: [],
       confidence: date ? 0.94 : 0.62,
     }];
   });
@@ -126,6 +128,7 @@ export function icsCandidates(text: string): ScheduleCandidate[] {
         durationMinutes: Math.max(15, end.date === start.date ? endMinutes - startMinutes : 60),
         course: "",
         notes: event.DESCRIPTION || "",
+        weekdays: [],
         confidence: start.date ? 0.99 : 0.65,
       });
       event = null;
@@ -161,9 +164,10 @@ const extractionSchema = {
           durationMinutes: { type: "number" },
           course: { type: "string" },
           notes: { type: "string" },
+          weekdays: { type: "array", items: { type: "number", minimum: 0, maximum: 6 } },
           confidence: { type: "number" },
         },
-        required: ["title", "kind", "date", "time", "durationMinutes", "course", "notes", "confidence"],
+        required: ["title", "kind", "date", "time", "durationMinutes", "course", "notes", "weekdays", "confidence"],
         additionalProperties: false,
       },
     },
@@ -189,6 +193,7 @@ function normalizeCandidates(value: unknown): ScheduleCandidate[] {
       durationMinutes: Math.max(15, Math.min(720, Math.round(Number(record.durationMinutes) || 60))),
       course: cleanText(record.course),
       notes: cleanText(record.notes),
+      weekdays: Array.isArray(record.weekdays) ? record.weekdays.filter(day => typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= 6) : [],
       confidence: Math.max(0, Math.min(1, Number(record.confidence) || 0.5)),
     }];
   });
@@ -223,7 +228,7 @@ async function modelCandidates(fileName: string, mimeType: string, buffer: Buffe
     model: "gemini-3-flash-preview",
     max_tokens: 5000,
     messages: [
-      { role: "system", content: "You extract schedules cautiously. Return only events, tasks, or focus blocks explicitly supported by the file. Use YYYY-MM-DD when a date is clear; otherwise leave date blank. Use 24-hour HH:MM only when a time is clear; otherwise leave time blank. Never invent dates, times, course names, or recurrences. Confidence must be between 0 and 1." },
+      { role: "system", content: "You extract schedules cautiously. Return only events, tasks, or focus blocks explicitly supported by the file. For a weekly timetable grid, create one candidate for every non-empty class cell; do not merge or omit repeated classes that occur on different weekdays or times. Set weekdays as numbers where Sunday=0 through Saturday=6 when a day header is visible, otherwise []. Preserve the grid time header as HH:MM, course name as course, and instructor/room/code details as notes where legible. Use YYYY-MM-DD only when a date is clear; otherwise leave date blank. Never invent dates, times, course names, weekdays, rooms, or recurrences. Confidence must be between 0 and 1." },
       { role: "user", content },
     ],
     response_format: { type: "json_schema", json_schema: { name: "schedule_candidates", strict: true, schema: extractionSchema } },
