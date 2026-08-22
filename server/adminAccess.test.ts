@@ -3,6 +3,7 @@ import { appRouter } from "./routers";
 import { ENV, isAdminGoogleEmail } from "./_core/env";
 import type { TrpcContext } from "./_core/context";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "../client/src/lib/privateWorkspace";
+import { roleChangeGuardrail } from "./db";
 
 function contextFor(role: "admin" | "user"): TrpcContext {
   return {
@@ -48,6 +49,12 @@ describe("administrator identity and access", () => {
     expect(canViewAdminControls(false, "admin")).toBe(false);
     expect(canViewAdminControls(true, "user")).toBe(false);
     expect(canViewAdminControls(true, "admin")).toBe(true);
+  });
+
+  it("allows safe administrator role changes while preventing self-demotion and demotion of the designated administrator", () => {
+    expect(roleChangeGuardrail(1, 2, "ordinary@example.com", "admin")).toBeNull();
+    expect(roleChangeGuardrail(1, 1, ENV.adminGoogleEmail, "user")).toContain("own role");
+    expect(roleChangeGuardrail(1, 2, ENV.adminGoogleEmail, "user")).toContain("cannot be demoted");
   });
 
   it("keeps private workspaces isolated and preserves administrator legacy plan records at first sign-in", () => {

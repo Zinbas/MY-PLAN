@@ -190,13 +190,19 @@ export async function listAdminUserDirectory() {
   });
 }
 
+export function roleChangeGuardrail(actorUserId: number, targetUserId: number, targetEmail: string | null, role: "admin" | "user") {
+  if (actorUserId === targetUserId) return "Administrators cannot change their own role.";
+  if (isAdminGoogleEmail(targetEmail) && role !== "admin") return "The designated MY PLAN administrator cannot be demoted.";
+  return null;
+}
+
 export async function setManagedUserRole(actorUserId: number, targetUserId: number, role: "admin" | "user") {
-  if (actorUserId === targetUserId) throw new Error("Administrators cannot change their own role.");
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const target = (await db.select().from(users).where(eq(users.id, targetUserId)).limit(1))[0];
   if (!target) return undefined;
-  if (isAdminGoogleEmail(target.email) && role !== "admin") throw new Error("The designated MY PLAN administrator cannot be demoted.");
+  const denied = roleChangeGuardrail(actorUserId, targetUserId, target.email, role);
+  if (denied) throw new Error(denied);
   await db.update(users).set({ role }).where(eq(users.id, targetUserId));
   return { id: targetUserId, role };
 }
