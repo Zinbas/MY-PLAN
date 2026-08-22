@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { addDays, addMonths, dateKey, daysInMonth, expandRepeatingBlock, isConflict, isTaskComplete, isTaskScheduled, monthStart, PersonalEvent, PlannerBlock, PlanTask, RepeatRule, sameDay, startOfWeek, taskDueState, taskEndAt, taskStatus, TaskStatus } from "@/lib/ongoingCalendar";
 import { dailyQuoteForDate } from "@/lib/dailyQuote";
 import { isValidImportDate } from "@/lib/importDates";
+import { mapSelectedImportCandidates } from "@/lib/importSelection";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
 import { ArrowRight, BarChart3, BookOpenCheck, CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CirclePlus, Clock3, CloudCog, Copy, Edit3, ExternalLink, Flag, GraduationCap, ListChecks, ListTodo, LogIn, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Square, Star, Trash2, Upload, UserRound, Users, X } from "lucide-react";
 
@@ -314,22 +315,8 @@ export default function Home() {
     setImportCandidates(current => current.map(candidate => candidate.id === id ? { ...candidate, ...update } : candidate));
   };
   const importScheduleCandidates = (selected: ImportCandidate[]) => {
-    const ready = selected.filter(candidate => isValidImportDate(candidate.date));
-    const skipped = selected.length - ready.length;
+    const { ready, skipped, blocks: importedBlocks, events: importedEvents, tasks: importedTasks } = mapSelectedImportCandidates(selected, Date.now());
     if (!ready.length) { setImportMessage("Select at least one item and enter a real date in YYYY-MM-DD format before adding it."); return; }
-    const timestamp = Date.now();
-    const importedBlocks = ready.filter(candidate => candidate.kind === "block").map((candidate, index) => {
-      const startAt = readDraftDate(candidate.date, candidate.time || "09:00")!;
-      return { id: `import-block-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), source: "planner" as const, priority: "normal" as const, repeat: "none" as RepeatRule, repeatUntil: null, completed: false, checklist: [] };
-    });
-    const importedEvents = ready.filter(candidate => candidate.kind === "event").map((candidate, index) => {
-      const startAt = readDraftDate(candidate.date, candidate.time || "09:00")!;
-      return { id: `import-event-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), priority: "normal" as Priority, course: candidate.course || "Imported schedule", notes: candidate.notes };
-    });
-    const importedTasks = ready.filter(candidate => candidate.kind === "task").map((candidate, index) => {
-      const dueAt = readDraftDate(candidate.date, candidate.time || "09:00")!;
-      return { id: `import-task-${timestamp}-${index}`, title: candidate.title, dueAt, priority: "normal" as Priority, course: candidate.course || "Imported schedule", notes: candidate.notes, completed: false, status: "open" as TaskStatus, createdAt: new Date(), completedAt: null, scheduledStartAt: candidate.time ? dueAt : null, durationMinutes: candidate.durationMinutes };
-    });
     setPlannerBlocks(current => [...current, ...importedBlocks]);
     setPersonalEvents(current => [...current, ...importedEvents]);
     setTasks(current => [...current, ...importedTasks]);

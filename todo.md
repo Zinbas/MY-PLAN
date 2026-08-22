@@ -139,7 +139,7 @@
 - [ ] Add successful-administrator, role-guardrail, and non-administrator denial regression coverage for the expanded administrator controls.
 - [x] Validate the prior review-first schedule importer through an isolated server-side harness with public routine image, PDF, and document samples, confirming editable review candidates and no automatic private calendar/task writes.
 - [ ] Refine schedule imports so users choose post-scan candidates to add, provide a mandatory date, and optionally provide a time before selected private calendar/task writes.
-- [ ] Add regression coverage for selected import, required-date validation, optional-time behavior, and per-user private-data isolation.
+- [x] Add regression coverage for selected import, required-date validation, optional-time behavior, and per-user private-data isolation.
 - [ ] Validate selected schedule imports against multiple public web image and PDF samples, comparing source entries with imported records for accuracy.
 - [ ] Validate the post-scan selection and manual-editing workflow with a public sample syllabus PDF containing dated academic entries.
 - [ ] Validate selected calendar writes and unselected-item exclusion with a public syllabus PDF containing explicit dates and times.
