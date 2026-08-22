@@ -194,6 +194,25 @@ function normalizeCandidates(value: unknown): ScheduleCandidate[] {
   });
 }
 
+function parseModelCandidates(value: unknown) {
+  const text = typeof value === "string" ? value.trim().replace(/^```json\s*/i, "").replace(/```\s*$/, "") : "{\"candidates\":[]}";
+  try {
+    return JSON.parse(text);
+  } catch {
+    const recovered = Array.from(text.matchAll(/\{(?:[^{}"]|"(?:\\.|[^"\\])*")+\}/g))
+      .flatMap(match => {
+        try {
+          const parsed = JSON.parse(match[0]) as Record<string, unknown>;
+          return typeof parsed.title === "string" ? [parsed] : [];
+        } catch {
+          return [];
+        }
+      });
+    if (recovered.length) return { candidates: recovered };
+    throw new Error("The schedule scan returned an incomplete response. Please try the image again or upload a clearer copy.");
+  }
+}
+
 async function modelCandidates(fileName: string, mimeType: string, buffer: Buffer, extractedText?: string) {
   const content = extractedText
     ? [{ type: "text" as const, text: `File name: ${fileName}\n\nExtracted content:\n${extractedText.slice(0, 60_000)}` }]
@@ -210,7 +229,7 @@ async function modelCandidates(fileName: string, mimeType: string, buffer: Buffe
     response_format: { type: "json_schema", json_schema: { name: "schedule_candidates", strict: true, schema: extractionSchema } },
   });
   const responseText = response.choices[0]?.message?.content;
-  return normalizeCandidates(JSON.parse(typeof responseText === "string" ? responseText : "{\"candidates\":[]}"));
+  return normalizeCandidates(parseModelCandidates(responseText));
 }
 
 export async function extractUploadedSchedule(userId: number, input: UploadedSchedule) {

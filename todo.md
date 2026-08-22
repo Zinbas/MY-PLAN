@@ -137,5 +137,16 @@
 - [ ] Add regression coverage proving Spark event actions require authorization and cannot access another user’s private calendar data.
 - [ ] Complete and browser-verify the separate administrator panel’s privacy-preserving user-management and feature-operations controls.
 - [ ] Add successful-administrator, role-guardrail, and non-administrator denial regression coverage for the expanded administrator controls.
-- [ ] Validate the review-first schedule importer end to end with public routine image, PDF, and document samples, including review edits, controlled approval, and verification of resulting private calendar/task writes.
+- [x] Validate the prior review-first schedule importer through an isolated server-side harness with public routine image, PDF, and document samples, confirming editable review candidates and no automatic private calendar/task writes.
+- [ ] Refine schedule imports so users choose post-scan candidates to add, provide a mandatory date, and optionally provide a time before selected private calendar/task writes.
+- [ ] Add regression coverage for selected import, required-date validation, optional-time behavior, and per-user private-data isolation.
+- [ ] Validate selected schedule imports against multiple public web image and PDF samples, comparing source entries with imported records for accuracy.
+- [ ] Validate the post-scan selection and manual-editing workflow with a public sample syllabus PDF containing dated academic entries.
+- [ ] Validate selected calendar writes and unselected-item exclusion with a public syllabus PDF containing explicit dates and times.
+- [ ] Validate image-based OCR with a public PNG/JPG academic schedule containing explicit dates and times, comparing source entries with selected-import readiness.
+- [ ] Validate manual editing of image-extracted event titles, dates, and optional times before selected confirmation.
+- [ ] Enforce exact real YYYY-MM-DD validation for manually edited import dates with inline feedback and selected-import blocking.
+- [ ] Add an accessible calendar date picker to the import-candidate editing interface while preserving exact YYYY-MM-DD validation.
+- [ ] Profile and improve initial load, calendar rendering, navigation, and schedule-import responsiveness without removing MY PLAN features.
+- [ ] Code-split Import Schedule, Gemini Spark, and Administrator panel workspaces so they load on demand without affecting core planning flows.
 - [ ] Diagnose and fix the blank MY PLAN mobile and embedded sign-in display so users can authenticate and access private importer features.

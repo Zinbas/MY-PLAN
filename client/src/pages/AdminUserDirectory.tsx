@@ -1,0 +1,8 @@
+import { trpc } from "@/lib/trpc";
+import { RefreshCw, Users } from "lucide-react";
+
+export default function AdminUserDirectory() {
+  const directory = trpc.admin.users.useQuery();
+  const setRole = trpc.admin.setRole.useMutation({ onSuccess: () => void directory.refetch() });
+  return <section className="admin-user-directory" aria-label="MY PLAN user management"><header><div><p className="kicker"><Users size={15} /> User access</p><h2>Manage roles, not private plans.</h2><p>Review account health and role assignments. Events, tasks, imported files, and calendar details stay private to every user.</p></div><button onClick={() => void directory.refetch()} disabled={directory.isFetching}><RefreshCw size={14} /> Refresh directory</button></header>{directory.isLoading ? <p>Loading account directory…</p> : <div className="admin-user-list">{(directory.data ?? []).map(account => <article key={account.id}><div><strong>{account.name || "MY PLAN account"}</strong><span>{account.email || "No email on record"}</span><small>{account.connectionCount} connected account{account.connectionCount === 1 ? "" : "s"} · {account.selectedCalendarCount} selected calendar{account.selectedCalendarCount === 1 ? "" : "s"}</small></div><div className="admin-role-control"><b>{account.role}</b><button disabled={setRole.isPending || account.role === "admin"} onClick={() => setRole.mutate({ userId: account.id, role: "admin" })}>Make admin</button><button disabled={setRole.isPending || account.role === "user"} onClick={() => setRole.mutate({ userId: account.id, role: "user" })}>Make user</button></div></article>)}</div>}</section>;
+}
