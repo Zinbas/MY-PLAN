@@ -164,7 +164,11 @@
 - [x] Rebalance or simplify the mobile top action area so the right-side icons no longer feel detached or misplaced.
 - [x] Add a user-selected repeat-until date for weekly timetable imports so routines do not continue beyond the intended term.
 - [x] Ensure repeat start and end controls are written for any user routine, work rotation, course, project, or term rather than assuming an academic semester.
-- [ ] Provide a safe, narrowly scoped rollback for the most recently imported timetable routine without affecting earlier personal plans.
-- [ ] Preserve or infer the most recent import rollback scope after a page reload so the user can safely remove the confirmed recent routine.
+- [x] Provide a safe, narrowly scoped rollback for the most recently imported timetable routine without affecting earlier personal plans.
+- [x] Preserve or infer the most recent import rollback scope after a page reload so the user can safely remove the confirmed recent routine.
+- [x] Design a cleaner routine date-range picker and import confirmation action for user review before applying a visual refinement.
+- [x] Design overlap detection and user-controlled conflict resolution for imported routines before applying it to MY PLAN.
+- [x] Define global conflict detection and resolution across events, tasks, focus blocks, imported routines, academic dates, and connected calendars.
+- [x] Implement the approved global conflict-management system across creation, editing, importing, recurring routines, and calendar views.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.

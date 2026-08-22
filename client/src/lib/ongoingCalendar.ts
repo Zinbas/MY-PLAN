@@ -42,6 +42,7 @@ export type PlanTask = {
 };
 
 export type CalendarItem = PlannerBlock | PersonalEvent | PlanTask;
+export type TimeConflict = { item: PlannerBlock; overlapMinutes: number };
 
 export const monthStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
 export const addMonths = (date: Date, amount: number) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
@@ -60,7 +61,13 @@ export const daysInMonth = (cursor: Date) => {
   return Array.from({ length: Math.ceil((padding + total) / 7) * 7 }, (_, index) => index < padding || index >= padding + total ? null : new Date(first.getFullYear(), first.getMonth(), index - padding + 1));
 };
 export const isWithin = (event: PlannerBlock, start: Date, end: Date) => event.endAt >= start && event.startAt < end;
-export const isConflict = (event: PlannerBlock, allEvents: PlannerBlock[]) => allEvents.some(other => other.id !== event.id && other.source === "planner" && event.source === "planner" && event.startAt < other.endAt && event.endAt > other.startAt);
+const rootId = (id: string) => id.split(":")[0];
+export const findTimeConflicts = (event: PlannerBlock, allEvents: PlannerBlock[]): TimeConflict[] => allEvents.flatMap(other => {
+  if (rootId(other.id) === rootId(event.id) || event.startAt >= other.endAt || event.endAt <= other.startAt) return [];
+  const overlapMinutes = Math.max(1, Math.round((Math.min(event.endAt.getTime(), other.endAt.getTime()) - Math.max(event.startAt.getTime(), other.startAt.getTime())) / 60_000));
+  return [{ item: other, overlapMinutes }];
+});
+export const isConflict = (event: PlannerBlock, allEvents: PlannerBlock[]) => findTimeConflicts(event, allEvents).length > 0;
 
 export const isTaskScheduled = (task: PlanTask) => Boolean(task.scheduledStartAt);
 
