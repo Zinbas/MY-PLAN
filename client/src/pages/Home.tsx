@@ -314,8 +314,8 @@ export default function Home() {
     }
     setImportCandidates(current => current.map(candidate => candidate.id === id ? { ...candidate, ...update } : candidate));
   };
-  const importScheduleCandidates = (selected: ImportCandidate[]) => {
-    const { ready, skipped, blocks: importedBlocks, events: importedEvents, tasks: importedTasks } = mapSelectedImportCandidates(selected, Date.now());
+  const importScheduleCandidates = (selected: ImportCandidate[], weeklyRepeatUntil?: string) => {
+    const { ready, skipped, blocks: importedBlocks, events: importedEvents, tasks: importedTasks } = mapSelectedImportCandidates(selected, Date.now(), weeklyRepeatUntil);
     if (!ready.length) { setImportMessage("Select at least one item and enter a real date in YYYY-MM-DD format before adding it."); return; }
     setPlannerBlocks(current => [...current, ...importedBlocks]);
     setPersonalEvents(current => [...current, ...importedEvents]);
@@ -325,14 +325,18 @@ export default function Home() {
     setImportMessage(`${ready.length} selected item${ready.length === 1 ? "" : "s"} added to your private MY PLAN workspace.${skipped ? ` ${skipped} selected candidate${skipped === 1 ? " needs" : "s need"} a complete date before it can be added.` : ""} Blank times use 9:00 AM.`);
     setToast(`Imported ${ready.length} selected plan item${ready.length === 1 ? "" : "s"}. Undo is available below.`);
   };
-  const addApprovedImportCandidates = (weeklyStart?: string) => {
+  const addApprovedImportCandidates = (weeklyStart?: string, weeklyEnd?: string) => {
     const selected = importCandidates.filter(candidate => candidate.approved);
-    const needsWeeklyAnchor = selected.some(candidate => candidate.weekdays?.length && !candidate.date);
-    if (needsWeeklyAnchor && !isValidImportDate(weeklyStart || "")) {
-      setImportMessage("Choose a real schedule start date in YYYY-MM-DD format before adding selected weekly timetable classes.");
+    const hasWeeklyRoutine = selected.some(candidate => candidate.weekdays?.length);
+    if (hasWeeklyRoutine && (!isValidImportDate(weeklyStart || "") || !isValidImportDate(weeklyEnd || ""))) {
+      setImportMessage("Choose real start and repeat-until dates before adding a weekly routine.");
       return;
     }
-    importScheduleCandidates(selected.map(candidate => candidate.weekdays?.length && !candidate.date ? { ...candidate, date: weeklyStart! } : candidate));
+    if (hasWeeklyRoutine && weeklyEnd! < weeklyStart!) {
+      setImportMessage("The repeat-until date must be on or after the routine start date.");
+      return;
+    }
+    importScheduleCandidates(selected.map(candidate => candidate.weekdays?.length ? { ...candidate, date: weeklyStart! } : candidate), weeklyEnd);
   };
   const undoLastAutomaticImport = () => {
     if (!lastAutoImportIds) return;

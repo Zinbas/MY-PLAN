@@ -26,9 +26,10 @@ describe("selected import mapping", () => {
   });
 
   it("converts a weekly timetable class into a recurring block on its extracted weekday", () => {
-    const mapped = mapSelectedImportCandidates(candidates, 1_700_000_000_000);
+    const mapped = mapSelectedImportCandidates(candidates, 1_700_000_000_000, "2026-12-18");
     expect(mapped.blocks[0].repeat).toBe("weekly");
     expect(mapped.blocks[0].startAt.getDay()).toBe(2);
     expect(mapped.blocks[0].startAt.getHours()).toBe(14);
+    expect(mapped.blocks[0].repeatUntil?.toISOString()).toContain("2026-12-18T23:59");
   });
 });

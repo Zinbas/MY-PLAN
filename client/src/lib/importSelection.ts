@@ -24,13 +24,14 @@ function firstWeeklyOccurrence(date: string, time: string, weekday?: number) {
   return startAt;
 }
 
-export function mapSelectedImportCandidates(selected: SelectedImportCandidate[], timestamp: number) {
+export function mapSelectedImportCandidates(selected: SelectedImportCandidate[], timestamp: number, weeklyRepeatUntil?: string) {
   const ready = selected.filter(candidate => isValidImportDate(candidate.date));
   const skipped = selected.length - ready.length;
   const blocks: PlannerBlock[] = ready.filter(candidate => candidate.kind === "block" || Boolean(candidate.weekdays?.length)).map((candidate, index) => {
     const weeklyDay = candidate.weekdays?.[0];
     const startAt = firstWeeklyOccurrence(candidate.date, candidate.time, weeklyDay);
-    return { id: `import-block-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), source: "planner", priority: "normal", repeat: weeklyDay == null ? "none" as RepeatRule : "weekly" as RepeatRule, repeatUntil: null, completed: false, checklist: [] };
+    const repeatUntil = weeklyDay == null || !isValidImportDate(weeklyRepeatUntil || "") ? null : atImportDate(weeklyRepeatUntil!, "23:59");
+    return { id: `import-block-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), source: "planner", priority: "normal", repeat: weeklyDay == null ? "none" as RepeatRule : "weekly" as RepeatRule, repeatUntil, completed: false, checklist: [] };
   });
   const events: PersonalEvent[] = ready.filter(candidate => candidate.kind === "event" && !candidate.weekdays?.length).map((candidate, index) => {
     const startAt = atImportDate(candidate.date, candidate.time);

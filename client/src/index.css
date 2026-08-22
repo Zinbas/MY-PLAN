@@ -90,6 +90,8 @@
 /* Compact import confirmation: it belongs after the review, never over it. */
 .import-confirm-bar{gap:10px;margin-top:14px;padding:10px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none}.import-confirm-bar span{color:var(--muted);font-size:11px;font-weight:700}.import-confirm-bar button{min-height:38px;padding:8px 10px}
 @media (max-width:820px){.import-confirm-bar{position:static;z-index:auto;margin-top:14px;padding:10px 0 0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none}.import-confirm-bar button{min-height:40px;padding:8px 10px}.import-review-heading>button{display:none}}
+.weekly-start-date{grid-template-columns:1fr 1fr}.weekly-start-date legend{padding:0 4px;color:var(--ink);font-size:11px;font-weight:700;letter-spacing:.06em}.weekly-start-date label{display:grid;gap:5px;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.06em}.weekly-start-date small{grid-column:1/-1}@media (max-width:820px){.weekly-start-date{grid-template-columns:1fr;padding:13px}.weekly-start-date input{width:100%;min-height:42px}}
+@media (max-width:820px){.ongoing-topbar{justify-content:space-between}.top-actions{flex:0;gap:0}.top-actions button:not(.accent){display:none}.top-actions .accent{width:44px;min-width:44px;max-width:44px;min-height:44px;border-radius:12px;box-shadow:3px 3px 0 #e4c6bc}.top-actions .accent svg{width:20px;height:20px}}
 @media (max-width:360px){
   .ongoing-main{padding-left:10px;padding-right:10px}
   .ongoing-topbar{gap:5px}

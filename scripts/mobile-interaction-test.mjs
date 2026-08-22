@@ -50,7 +50,7 @@ if (mobileWelcomeAvailable) {
 } else {
   await assert('Mobile signed-in session bypasses the retired Welcome workspace', `document.body.innerText.includes('Every month ahead.') && ![...document.querySelectorAll('.side-nav button')].some(button => button.textContent.includes('Welcome'))`);
 }
-await assert('Mobile top actions use compact icon-first touch controls', `document.querySelectorAll('.top-actions button').length === 4 && [...document.querySelectorAll('.top-actions button')].every(button => button.getBoundingClientRect().height >= 34)`);
+await assert('Mobile header keeps one clear primary add action instead of a detached icon strip', `document.querySelectorAll('.top-actions button').length === 4 && [...document.querySelectorAll('.top-actions button:not(.accent)')].every(button => getComputedStyle(button).display === 'none') && document.querySelector('.top-actions .accent')?.getBoundingClientRect().height >= 40`);
 await assert('Mobile navigation control clearly announces that it opens the sidebar', `document.querySelector('.mobile-menu')?.getAttribute('aria-label') === 'Open navigation'`);
 await assert('Mobile previous and next month controls remain visibly touchable', `['Previous month','Next month'].every(label => { const button = document.querySelector('button[aria-label="' + label + '"]'); const rect = button?.getBoundingClientRect(); return button && rect.width >= 34 && rect.height >= 34 && getComputedStyle(button).visibility !== 'hidden'; })`);
 await evaluate(`document.querySelector('.mobile-menu').click(); true`);
