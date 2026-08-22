@@ -158,5 +158,8 @@
 - [ ] Retest the user-provided weekly timetable as a non-writing regression fixture when the user uploads it again; do not add any of its entries during this validation.
 - [ ] Correct missing, duplicate, and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so every extracted weekday, time, course, and final confirmation action is unambiguous.
+- [x] Prevent non-date text from being entered into weekly timetable date controls and distinguish the shared schedule start date from any optional item override.
+- [x] Rework the mobile review confirmation area so it does not obscure candidate fields or prevent scrolling through all selected subjects.
+- [x] Reduce the mobile selected-items confirmation to a compact, non-obstructive action bar with only essential information.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.
