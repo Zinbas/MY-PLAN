@@ -165,5 +165,6 @@
 - [x] Add a user-selected repeat-until date for weekly timetable imports so routines do not continue beyond the intended term.
 - [x] Ensure repeat start and end controls are written for any user routine, work rotation, course, project, or term rather than assuming an academic semester.
 - [ ] Provide a safe, narrowly scoped rollback for the most recently imported timetable routine without affecting earlier personal plans.
+- [ ] Preserve or infer the most recent import rollback scope after a page reload so the user can safely remove the confirmed recent routine.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.
