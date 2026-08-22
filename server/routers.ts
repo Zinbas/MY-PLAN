@@ -5,7 +5,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, isGoogleOAuthConfigured } from "./googleOAuth";
-import { getAdminOverview, listOwnedLinkedCalendars, listUserCalendarConnections, listUserSyncedEvents } from "./db";
+import { getAdminOverview, listAdminUserDirectory, listOwnedLinkedCalendars, listUserCalendarConnections, listUserSyncedEvents, setManagedUserRole } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule } from "./scheduleImport";
@@ -33,6 +33,8 @@ export const appRouter = router({
       role: ctx.user.role,
     })),
     overview: adminProcedure.query(() => getAdminOverview()),
+    users: adminProcedure.query(() => listAdminUserDirectory()),
+    setRole: adminProcedure.input(z.object({ userId: z.number().int().positive(), role: z.enum(["admin", "user"]) })).mutation(({ ctx, input }) => setManagedUserRole(ctx.user.id, input.userId, input.role)),
   }),
   calendar: router({
     readiness: publicProcedure.query(() => ({

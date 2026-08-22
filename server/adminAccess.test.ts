@@ -38,6 +38,12 @@ describe("administrator identity and access", () => {
     await expect(appRouter.createCaller(contextFor("user")).admin.overview()).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
+  it("rejects non-administrator access to the user directory and role-management controls", async () => {
+    const caller = appRouter.createCaller(contextFor("user"));
+    await expect(caller.admin.users()).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(caller.admin.setRole({ userId: 2, role: "admin" })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("shows administrator controls only to an authenticated administrator", () => {
     expect(canViewAdminControls(false, "admin")).toBe(false);
     expect(canViewAdminControls(true, "user")).toBe(false);

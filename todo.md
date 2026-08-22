@@ -135,3 +135,5 @@
 - [ ] Prepare and verify the safe Spark connection workflow without changing Google Calendar, OAuth, or private planner data.
 - [ ] Define and implement authenticated Gemini Spark tools that can create, view, update, and remove only the connected user’s MY PLAN events.
 - [ ] Add regression coverage proving Spark event actions require authorization and cannot access another user’s private calendar data.
+- [ ] Complete and browser-verify the separate administrator panel’s privacy-preserving user-management and feature-operations controls.
+- [ ] Add successful-administrator, role-guardrail, and non-administrator denial regression coverage for the expanded administrator controls.

@@ -167,6 +167,40 @@ export async function getAdminOverview() {
   };
 }
 
+export async function listAdminUserDirectory() {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const [allUsers, connections, calendars] = await Promise.all([
+    db.select().from(users),
+    db.select().from(calendarConnections),
+    db.select().from(linkedCalendars),
+  ]);
+  return allUsers.map(user => {
+    const userConnections = connections.filter(connection => connection.userId === user.id);
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt,
+      lastSignedIn: user.lastSignedIn,
+      connectionCount: userConnections.length,
+      selectedCalendarCount: calendars.filter(calendar => calendar.isVisible && userConnections.some(connection => connection.id === calendar.connectionId)).length,
+    };
+  });
+}
+
+export async function setManagedUserRole(actorUserId: number, targetUserId: number, role: "admin" | "user") {
+  if (actorUserId === targetUserId) throw new Error("Administrators cannot change their own role.");
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const target = (await db.select().from(users).where(eq(users.id, targetUserId)).limit(1))[0];
+  if (!target) return undefined;
+  if (isAdminGoogleEmail(target.email) && role !== "admin") throw new Error("The designated MY PLAN administrator cannot be demoted.");
+  await db.update(users).set({ role }).where(eq(users.id, targetUserId));
+  return { id: targetUserId, role };
+}
+
 export async function getOwnedCalendarConnection(userId: number, connectionId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
