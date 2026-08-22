@@ -216,7 +216,14 @@ export default function Home() {
   const calendarCourses = useMemo(() => ["All courses / lists", ...Array.from(new Set([...allCalendarBlocks.map(event => event.course).filter(Boolean), ...tasks.map(task => task.course).filter(Boolean)])).sort()], [allCalendarBlocks, tasks]);
   const calendarTaskStatuses = useMemo(() => new Map(tasks.map(task => [task.id, taskStatus(task)])), [tasks]);
   const activeSecondaryFilterCount = Number(itemTypeFilter !== "all") + Number(scheduleHealthFilter !== "all") + Number(calendarPriorityFilter !== "all") + Number(routineFilter !== "all") + Number(calendarTaskStatusFilter !== "all") + Number(calendarCourseFilter !== "All courses / lists");
+  const activeFilterCount = activeSecondaryFilterCount + Number(filter !== "all");
   const clearSecondaryFilters = () => { setItemTypeFilter("all"); setScheduleHealthFilter("all"); setCalendarPriorityFilter("all"); setRoutineFilter("all"); setCalendarTaskStatusFilter("all"); setCalendarCourseFilter("All courses / lists"); };
+  useEffect(() => {
+    const trigger = Array.from(document.querySelectorAll<HTMLButtonElement>(".calendar-filters .control-trigger")).find(button => button.textContent?.trim().startsWith("Filters"));
+    if (!trigger) return;
+    if (activeFilterCount) trigger.dataset.filterCount = String(activeFilterCount); else delete trigger.dataset.filterCount;
+    trigger.setAttribute("aria-label", activeFilterCount ? `Filters, ${activeFilterCount} active` : "Filters");
+  }, [activeFilterCount, section, showMoreFilters]);
   const visibleEvents = useMemo(() => allCalendarBlocks.filter(event => {
     const taskState = event.source === "task" ? calendarTaskStatuses.get(event.id) : undefined;
     const overlapCount = findTimeConflicts(event, allCalendarBlocks).length;
