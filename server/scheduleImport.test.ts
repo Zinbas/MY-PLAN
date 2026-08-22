@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { csvRows, icsCandidates, rowCandidates, workbookCandidates } from "./scheduleImport";
+import { csvRows, deduplicateTimetableCandidates, icsCandidates, rowCandidates, workbookCandidates } from "./scheduleImport";
 
 describe("schedule import parsers", () => {
   it("extracts event candidates from an ICS calendar without invoking a model", () => {
@@ -30,5 +30,16 @@ describe("schedule import parsers", () => {
   it("leaves ambiguous spreadsheet dates blank for user review instead of inventing one", () => {
     const candidates = rowCandidates(csvRows("Title,Course\nPrepare project summary,Data Structures"));
     expect(candidates[0]).toMatchObject({ title: "Prepare project summary", date: "", confidence: 0.62 });
+  });
+
+  it("keeps one internally consistent candidate per weekly timetable day-and-time cell", () => {
+    const candidates = deduplicateTimetableCandidates([
+      { id: "wrong", title: "Probability and Statistics", kind: "block", date: "", time: "01:00", durationMinutes: 60, course: "Financial Literacy", notes: "", weekdays: [1], confidence: 1 },
+      { id: "right", title: "Probability and Statistics", kind: "block", date: "", time: "01:00", durationMinutes: 60, course: "Probability and Statistics", notes: "", weekdays: [1], confidence: 0.8 },
+      { id: "other-slot", title: "Probability and Statistics", kind: "block", date: "", time: "01:00", durationMinutes: 60, course: "Probability and Statistics", notes: "", weekdays: [2], confidence: 0.8 },
+    ]);
+    expect(candidates).toHaveLength(2);
+    expect(candidates.find(candidate => candidate.weekdays[0] === 1)?.id).toBe("right");
+    expect(candidates.find(candidate => candidate.weekdays[0] === 2)?.id).toBe("other-slot");
   });
 });

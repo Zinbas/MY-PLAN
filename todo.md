@@ -156,3 +156,7 @@
 - [x] Add a weekly-timetable start-date and recurrence completion flow for extracted items that have weekday/time information but no calendar date.
 - [x] Strengthen the import-review confirmation with a prominent Add selected to MY PLAN action and clear selected-item count.
 - [ ] Retest the user-provided weekly timetable as a non-writing regression fixture when the user uploads it again; do not add any of its entries during this validation.
+- [ ] Correct missing, duplicate, and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
+- [ ] Improve the mobile weekly-timetable review so every extracted weekday, time, course, and final confirmation action is unambiguous.
+- [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
+- [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.

@@ -176,9 +176,9 @@ const extractionSchema = {
   additionalProperties: false,
 } as const;
 
-function normalizeCandidates(value: unknown): ScheduleCandidate[] {
+export function normalizeCandidates(value: unknown): ScheduleCandidate[] {
   const candidates = Array.isArray((value as { candidates?: unknown[] })?.candidates) ? (value as { candidates: unknown[] }).candidates : [];
-  return candidates.slice(0, 60).flatMap((candidate, index) => {
+  const normalized = candidates.slice(0, 120).flatMap((candidate, index) => {
     if (!candidate || typeof candidate !== "object") return [];
     const record = candidate as Record<string, unknown>;
     const title = cleanText(record.title);
@@ -197,6 +197,24 @@ function normalizeCandidates(value: unknown): ScheduleCandidate[] {
       confidence: Math.max(0, Math.min(1, Number(record.confidence) || 0.5)),
     }];
   });
+  return deduplicateTimetableCandidates(normalized);
+}
+
+export function deduplicateTimetableCandidates(candidates: ScheduleCandidate[]) {
+  const seen = new Map<string, ScheduleCandidate>();
+  for (const candidate of candidates) {
+    const weekday = candidate.weekdays.length === 1 ? candidate.weekdays[0] : null;
+    const slot = weekday == null || !candidate.time ? "" : `${weekday}|${candidate.time}`;
+    const key = slot || `unique|${candidate.id}`;
+    const current = seen.get(key);
+    if (!current) { seen.set(key, candidate); continue; }
+    const score = (value: ScheduleCandidate) =>
+      (value.course && value.title.localeCompare(value.course, undefined, { sensitivity: "accent" }) === 0 ? 3 : 0)
+      + (value.notes ? 1 : 0)
+      + value.confidence;
+    if (score(candidate) > score(current)) seen.set(key, candidate);
+  }
+  return Array.from(seen.values());
 }
 
 function parseModelCandidates(value: unknown) {
@@ -225,10 +243,10 @@ async function modelCandidates(fileName: string, mimeType: string, buffer: Buffe
       ? [{ type: "text" as const, text: `Extract schedule candidates from this ${fileName}.` }, { type: "image_url" as const, image_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}`, detail: "high" as const } }]
       : [{ type: "text" as const, text: `Extract schedule candidates from this ${fileName}.` }, { type: "file_url" as const, file_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}`, mime_type: "application/pdf" as const } }];
   const response = await invokeLLM({
-    model: "gemini-3-flash-preview",
-    max_tokens: 5000,
+    model: "gemini-3.1-pro-preview",
+    max_tokens: 14000,
     messages: [
-      { role: "system", content: "You extract schedules cautiously. Return only events, tasks, or focus blocks explicitly supported by the file. For a weekly timetable grid, create one candidate for every non-empty class cell; do not merge or omit repeated classes that occur on different weekdays or times. Set weekdays as numbers where Sunday=0 through Saturday=6 when a day header is visible, otherwise []. Preserve the grid time header as HH:MM, course name as course, and instructor/room/code details as notes where legible. Use YYYY-MM-DD only when a date is clear; otherwise leave date blank. Never invent dates, times, course names, weekdays, rooms, or recurrences. Confidence must be between 0 and 1." },
+      { role: "system", content: "You extract schedules cautiously. Return only events, tasks, or focus blocks explicitly supported by the file. For a weekly timetable grid, perform a complete visual inventory: inspect every day column and every time row in reading order, then emit exactly one candidate for every non-empty grid cell. Never summarize, sample, merge, or omit cells because a subject repeats. A single weekday plus start time identifies one grid cell; never return two different candidates for the same weekday/time slot. Set kind to block for weekly timetable cells. Set weekdays to the visible day number where Sunday=0 through Saturday=6. Copy the subject/course label exactly into BOTH title and course. Copy room, faculty, batch, section, code, or other cell details only into notes. Copy the associated row/column time header exactly as 24-hour HH:MM; do not borrow a time or course from an adjacent cell. Before responding, cross-check that each non-empty grid cell has one output and that title, course, weekday, and time agree within that same cell. Use YYYY-MM-DD only when a date is clear; otherwise leave date blank. If text, day, or time is illegible, leave only that field blank instead of guessing. Never invent dates, times, course names, weekdays, rooms, or recurrences. Confidence must be between 0 and 1." },
       { role: "user", content },
     ],
     response_format: { type: "json_schema", json_schema: { name: "schedule_candidates", strict: true, schema: extractionSchema } },
@@ -267,5 +285,5 @@ export async function extractUploadedSchedule(userId: number, input: UploadedSch
   } else {
     throw new Error("Supported uploads are PDF, image, DOCX, XLS/XLSX, CSV, and ICS files. Please convert older .doc files to DOCX or PDF.");
   }
-  return { file: { name: input.fileName, mimeType, storageKey: stored.key }, extractionMode, candidates: candidates.slice(0, 60) };
+  return { file: { name: input.fileName, mimeType, storageKey: stored.key }, extractionMode, candidates: candidates.slice(0, 120) };
 }
