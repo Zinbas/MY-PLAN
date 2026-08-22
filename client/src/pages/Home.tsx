@@ -8,6 +8,7 @@ import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { addDays, addMonths, dateKey, daysInMonth, expandRepeatingBlock, isConflict, isTaskComplete, isTaskScheduled, monthStart, PersonalEvent, PlannerBlock, PlanTask, RepeatRule, sameDay, startOfWeek, taskDueState, taskEndAt, taskStatus, TaskStatus } from "@/lib/ongoingCalendar";
 import { dailyQuoteForDate } from "@/lib/dailyQuote";
+import { isValidImportDate } from "@/lib/importDates";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
 import { ArrowRight, BarChart3, BookOpenCheck, CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CirclePlus, Clock3, CloudCog, Copy, Edit3, ExternalLink, Flag, GraduationCap, ListChecks, ListTodo, LogIn, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Square, Star, Trash2, Upload, UserRound, Users, X } from "lucide-react";
 
@@ -63,12 +64,6 @@ function formatShort(date: Date) { return new Intl.DateTimeFormat("en-US", { wee
 function displayTime(date: Date) { return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date); }
 function timeInputValue(date: Date) { return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`; }
 function readDraftDate(value: string, time: string) { const date = new Date(`${value}T${time || "09:00"}:00`); return Number.isNaN(date.getTime()) ? null : date; }
-function isValidImportDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
-}
 function formatElapsed(seconds: number) { const hours = Math.floor(seconds / 3600); const minutes = Math.floor((seconds % 3600) / 60); const remainder = seconds % 60; return `${hours ? `${String(hours).padStart(2, "0")}:` : ""}${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`; }
 
 export default function Home() {
