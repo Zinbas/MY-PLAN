@@ -9,6 +9,8 @@ import { getAdminOverview, listOwnedLinkedCalendars, listUserCalendarConnections
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule } from "./scheduleImport";
+import { createHash, randomBytes } from "node:crypto";
+import { listSparkEvents, replaceSparkAccessToken } from "./db";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -60,6 +62,14 @@ export const appRouter = router({
       if (!isGoogleOAuthConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Google OAuth is not configured yet." });
       await deleteCalendarEvent(ctx.user.id, input.eventId);
       return { success: true } as const;
+    }),
+  }),
+  spark: router({
+    events: protectedProcedure.input(z.object({ startAt: z.date(), endAt: z.date() })).query(({ ctx, input }) => listSparkEvents(ctx.user.id, input.startAt, input.endAt)),
+    createAccessToken: protectedProcedure.mutation(async ({ ctx }) => {
+      const token = `myplan_${randomBytes(32).toString("base64url")}`;
+      await replaceSparkAccessToken(ctx.user.id, createHash("sha256").update(token).digest("hex"));
+      return { token };
     }),
   }),
   schedule: router({

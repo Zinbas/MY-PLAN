@@ -131,3 +131,7 @@
 - [ ] Verify the connected GitHub repository and, with user confirmation, upload a small non-sensitive test subset of MY PLAN files.
 - [ ] Defer the GitHub test export until MY PLAN is complete; use neutral MY PLAN-only repository metadata with no Manus attribution.
 - [ ] After live validation, prepare a neutral GitHub handoff and user-controlled external deployment guide for MY PLAN with no Manus attribution.
+- [ ] Confirm the user’s intended Spark service and its supported MY PLAN connection method before configuring access.
+- [ ] Prepare and verify the safe Spark connection workflow without changing Google Calendar, OAuth, or private planner data.
+- [ ] Define and implement authenticated Gemini Spark tools that can create, view, update, and remove only the connected user’s MY PLAN events.
+- [ ] Add regression coverage proving Spark event actions require authorization and cannot access another user’s private calendar data.

@@ -113,6 +113,28 @@ export const googleOAuthStates = mysqlTable("googleOAuthStates", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, table => [index("googleOAuthStates_user_idx").on(table.userId)]);
 
+/** A revocable, hashed credential used only by a user's connected Gemini Spark custom app. */
+export const sparkAccessTokens = mysqlTable("sparkAccessTokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: varchar("tokenHash", { length: 128 }).notNull().unique(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastUsedAt: timestamp("lastUsedAt"),
+}, table => [uniqueIndex("sparkAccessTokens_user_unique").on(table.userId)]);
+
+/** Server-persisted private MY PLAN events created through a user's Spark custom app. */
+export const sparkEvents = mysqlTable("sparkEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 1024 }).notNull(),
+  description: text("description"),
+  startAt: timestamp("startAt").notNull(),
+  endAt: timestamp("endAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("sparkEvents_user_start_idx").on(table.userId, table.startAt)]);
+
 export type CalendarConnection = typeof calendarConnections.$inferSelect;
 export type LinkedCalendar = typeof linkedCalendars.$inferSelect;
 export type SyncedEvent = typeof syncedEvents.$inferSelect;
+export type SparkEvent = typeof sparkEvents.$inferSelect;

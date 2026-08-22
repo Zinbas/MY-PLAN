@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { handleDemoMcpRequest } from "./mcpRoutes";
+import { getMcpTools, handleMcpRequest } from "./mcpRoutes";
 
-describe("demonstration MCP endpoint", () => {
-  it("advertises the two safe demonstration tools", () => {
-    const response = handleDemoMcpRequest({ id: 1, method: "tools/list" });
-    expect(response).toMatchObject({ jsonrpc: "2.0", id: 1 });
-    expect((response as any).result.tools).toHaveLength(2);
+describe("authenticated MY PLAN Spark MCP endpoint", () => {
+  it("advertises the private event tools required for user-authorized planning actions", () => {
+    const names = getMcpTools().map(tool => tool.name);
+    expect(names).toEqual(["list_events", "create_event", "update_event", "delete_event"]);
+    expect(getMcpTools().find(tool => tool.name === "create_event")?.description).toContain("private MY PLAN event");
   });
 
-  it("returns an honest activation status instead of claiming Google access", () => {
-    const response = handleDemoMcpRequest({ id: 2, method: "tools/call", params: { name: "get_calendar_connection_status" } }) as any;
-    expect(response.result.content[0].text).toContain("demonstration mode");
-    expect(response.result.content[0].text).toContain("no Google account data");
+  it("keeps the MCP protocol available while rejecting invalid event input before any private write", async () => {
+    await expect(handleMcpRequest(7, { id: 1, method: "initialize" })).resolves.toMatchObject({ jsonrpc: "2.0", result: { serverInfo: { name: "MY PLAN" } } });
+    await expect(handleMcpRequest(7, { id: 2, method: "tools/call", params: { name: "create_event", arguments: { title: "Exam", startAt: "not-a-date", endAt: "2026-09-01T10:00:00Z" } } })).resolves.toMatchObject({ error: { code: -32602 } });
   });
 });

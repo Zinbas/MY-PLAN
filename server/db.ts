@@ -1,6 +1,6 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, syncedEvents, users } from "../drizzle/schema";
+import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
 import { calendarsForConnections, connectionsForUser, visibleEventsForCalendars } from "./calendarOwnership";
 
@@ -260,6 +260,48 @@ export async function getSyncState(linkedCalendarId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   return (await db.select().from(calendarSyncStates).where(eq(calendarSyncStates.linkedCalendarId, linkedCalendarId)).limit(1))[0];
+}
+
+export async function replaceSparkAccessToken(userId: number, tokenHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(sparkAccessTokens).where(eq(sparkAccessTokens.userId, userId));
+  await db.insert(sparkAccessTokens).values({ userId, tokenHash });
+}
+
+export async function getSparkTokenOwner(tokenHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const token = (await db.select().from(sparkAccessTokens).where(eq(sparkAccessTokens.tokenHash, tokenHash)).limit(1))[0];
+  if (!token) return undefined;
+  await db.update(sparkAccessTokens).set({ lastUsedAt: new Date() }).where(eq(sparkAccessTokens.id, token.id));
+  return token.userId;
+}
+
+export async function listSparkEvents(userId: number, startAt: Date, endAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select().from(sparkEvents).where(and(eq(sparkEvents.userId, userId), gte(sparkEvents.endAt, startAt), lte(sparkEvents.startAt, endAt)));
+}
+
+export async function createSparkEvent(userId: number, input: { title: string; description?: string | null; startAt: Date; endAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const created = await db.insert(sparkEvents).values({ userId, ...input });
+  return (await db.select().from(sparkEvents).where(and(eq(sparkEvents.userId, userId), eq(sparkEvents.id, Number(created[0].insertId)))).limit(1))[0];
+}
+
+export async function updateSparkEvent(userId: number, eventId: number, input: { title: string; description?: string | null; startAt: Date; endAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(sparkEvents).set(input).where(and(eq(sparkEvents.userId, userId), eq(sparkEvents.id, eventId)));
+  return (await db.select().from(sparkEvents).where(and(eq(sparkEvents.userId, userId), eq(sparkEvents.id, eventId))).limit(1))[0];
+}
+
+export async function deleteSparkEvent(userId: number, eventId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.delete(sparkEvents).where(and(eq(sparkEvents.userId, userId), eq(sparkEvents.id, eventId)));
 }
 
 export async function upsertWatchChannel(input: { linkedCalendarId: number; channelId: string; resourceId: string; verificationToken: string; expiresAt: Date }) {
