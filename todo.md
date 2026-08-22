@@ -106,7 +106,7 @@
 - [x] Give every non-administrator user a clean private calendar, task, and event workspace that cannot display or alter administrator data.
 - [ ] Add higher-level regression coverage for administrator baseline visibility and non-administrator private-workspace isolation beyond helper-function tests.
 - [x] Ensure each user’s Google Calendar connection, selected calendars, mirrored events, and sync actions remain visible and writable only to that user.
-- [ ] Add regression coverage for per-user Google Calendar connection and mirrored-event isolation.
+- [x] Add regression coverage for per-user Google Calendar connection and mirrored-event isolation.
 - [x] Let each signed-in user choose which of their own Google calendars to import and keep synchronized in their private MY PLAN workspace.
 - [x] Scan uploaded PDFs, images, documents, spreadsheets, CSV files, and ICS calendars into editable event, task, and focus-block candidates that create items only after the user approves them.
 - [x] Decide against browser notification permission in favor of user-selected Google Calendar as the primary reminder channel.

@@ -2,6 +2,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
+import { calendarsForConnections, connectionsForUser, visibleEventsForCalendars } from "./calendarOwnership";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -135,7 +136,7 @@ export async function upsertGoogleCalendarConnection(input: {
 export async function listUserCalendarConnections(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const connections = await db.select().from(calendarConnections).where(eq(calendarConnections.userId, userId));
+  const connections = connectionsForUser(await db.select().from(calendarConnections), userId);
   const calendars = connections.length
     ? await db.select().from(linkedCalendars)
     : [];
@@ -182,10 +183,9 @@ export async function upsertLinkedCalendar(input: { connectionId: number; extern
 export async function listOwnedLinkedCalendars(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const connections = await db.select().from(calendarConnections).where(eq(calendarConnections.userId, userId));
+  const connections = connectionsForUser(await db.select().from(calendarConnections), userId);
   if (!connections.length) return [];
-  const calendars = await db.select().from(linkedCalendars);
-  return calendars.filter(calendar => connections.some(connection => connection.id === calendar.connectionId));
+  return calendarsForConnections(await db.select().from(linkedCalendars), connections);
 }
 
 export async function setOwnedLinkedCalendarVisibility(userId: number, linkedCalendarId: number, isVisible: boolean) {
@@ -206,10 +206,10 @@ export async function upsertSyncedEvent(linkedCalendarId: number, event: { exter
 export async function listUserSyncedEvents(userId: number, startAt: Date, endAt: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const calendars = (await listOwnedLinkedCalendars(userId)).filter(calendar => calendar.isVisible);
+  const calendars = await listOwnedLinkedCalendars(userId);
   if (!calendars.length) return [];
   const rows = await db.select().from(syncedEvents).where(and(gte(syncedEvents.endAt, startAt), lte(syncedEvents.startAt, endAt)));
-  return rows.filter(event => calendars.some(calendar => calendar.id === event.linkedCalendarId) && !event.isDeleted);
+  return visibleEventsForCalendars(rows, calendars);
 }
 
 export async function getOwnedLinkedCalendar(userId: number, linkedCalendarId: number) {
