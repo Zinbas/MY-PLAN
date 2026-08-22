@@ -82,6 +82,17 @@ await evaluate(`document.querySelector('.date-context-menu button')?.click(); tr
 await sleep(100);
 await assert('Date context menu opens a date-specific task composer', `Boolean(document.querySelector('.composer')) && document.body.innerText.includes('Capture the next action')`);
 await evaluate(`document.querySelector('.composer .close')?.click(); true`);
+await clickText('Filters');
+await sleep(100);
+await assert('Advanced calendar filters expose overlaps-only and user-planning controls', `Boolean(document.querySelector('.advanced-filter-popover')) && ['Calendar item type filter','Calendar overlap filter','Calendar priority filter','Calendar routine filter','Calendar task status filter','Calendar course filter'].every(label => Boolean(document.querySelector('[aria-label="' + label + '"]')))`);
+await evaluate(`(() => { const select = document.querySelector('[aria-label="Calendar overlap filter"]'); if (!select) throw new Error('Overlap filter missing'); select.value = 'conflicts'; select.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
+await sleep(100);
+await assert('Calendar applies the overlaps-only filter selection', `document.querySelector('[aria-label="Calendar overlap filter"]')?.value === 'conflicts' && document.querySelector('.control-trigger')?.textContent.includes('All sources')`);
+await evaluate(`document.querySelector('.advanced-filter-heading button')?.click(); true`);
+await sleep(50);
+await assert('Advanced calendar filters can clear active selections', `![...document.querySelectorAll('.control-trigger')].some(button => button.textContent.includes('Filters · 1'))`);
+await clickText('Filters');
+await sleep(50);
 await clickText('All sources');
 await sleep(100);
 await evaluate(`(() => { const anchor = document.querySelector('.control-anchor'); if (!anchor) throw new Error('Filter anchor missing'); anchor.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body })); return true; })()`);

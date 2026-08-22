@@ -170,5 +170,6 @@
 - [x] Design overlap detection and user-controlled conflict resolution for imported routines before applying it to MY PLAN.
 - [x] Define global conflict detection and resolution across events, tasks, focus blocks, imported routines, academic dates, and connected calendars.
 - [x] Implement the approved global conflict-management system across creation, editing, importing, recurring routines, and calendar views.
+- [x] Define and implement an essential multi-filter calendar control set, including overlaps-only, for common student and professional planning workflows.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.
