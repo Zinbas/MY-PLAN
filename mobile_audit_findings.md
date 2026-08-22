@@ -38,4 +38,28 @@ The audited calendar, To-do, Progress, Accounts, Sync, Import, Spark, composer, 
 
 ## Review status
 
-The remaining audit will inspect Progress, Sync, Gemini Spark, and the double-tap action sheet after the Accounts and Import corrections are verified.
+The compact-phone and desktop audit is complete. Calendar, To-do, Progress, Account Center, Sync Center, schedule import, Gemini Spark, Welcome, device-specific tutorial, composer, desktop date context menu, and mobile double-tap planning sheet have been reviewed. The only remaining publication dependencies are the final public HTTPS callback address and user-owned Google OAuth credentials.
+
+## Final quality pass — Account Center
+
+The refreshed desktop Account Center keeps the signed-out connection explanation, Google activation state, and sign-in actions in a clear vertical order with comfortable reading width and visible controls. On the compact-phone layout, the heading wraps deliberately, the account state card retains a full-width primary action, and the Google connection state and explanatory note remain readable without horizontal overflow. No Account Center layout change is required before publication.
+
+### Final quality pass — Schedule import
+
+The refreshed desktop import screen presents the supported formats, privacy boundary, and sign-in prerequisite in a short, clear sequence. On compact phones, the import heading and descriptive copy wrap cleanly, each format remains independently legible, and the primary sign-in control is easy to find and tap. No schedule-import layout change is required before publication.
+
+### Final quality pass — To-do
+
+The desktop To-do workspace keeps the primary add action, status metrics, filter chips, list selector, and task controls visibly separated. On compact phones, the add-task action becomes a full-width target, the four metrics form a stable two-column grid, and the filter/list chips wrap in a predictable scanning order. Task controls remain labeled and readable. No To-do layout change is required before publication.
+
+### Final quality pass — Progress
+
+The desktop Progress workspace has a clear top action, four distinct summary metrics, and an easy-to-scan list-progress panel. On compact phones, the review action is prominent, progress metrics stack without clipping, and the list-progress card stays readable and visually calm. No Progress layout change is required before publication.
+
+### Final quality pass — Sync Center
+
+The desktop Sync Center keeps connection metrics, the Google-reminder explanation, and the setup route clearly separated. On compact phones, each metric stacks into a distinct card and the reminder setup action remains large, explicit, and easy to reach. The honest demo-mode state correctly communicates the remaining OAuth dependency. No Sync Center layout change is required before publication.
+
+## Final verification summary
+
+The final quality pass re-ran the full unit suite, TypeScript validation, production build, desktop interaction coverage, and compact-phone interaction coverage. All checks passed. The remaining pre-publication limitations are user-owned: a public HTTPS callback URL and Google OAuth credentials are required to activate live Google Calendar linking and Google-delivered reminders.
