@@ -171,5 +171,7 @@
 - [x] Define global conflict detection and resolution across events, tasks, focus blocks, imported routines, academic dates, and connected calendars.
 - [x] Implement the approved global conflict-management system across creation, editing, importing, recurring routines, and calendar views.
 - [x] Define and implement an essential multi-filter calendar control set, including overlaps-only, for common student and professional planning workflows.
+- [ ] Add concise, responsive event-level indicators that explain the active calendar filters applying to each displayed item.
+- [x] Replace the overflowing mobile calendar filter panel with a compact inset sheet containing only Overlaps, Type, Priority, and Course/list.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.
