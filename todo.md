@@ -148,5 +148,5 @@
 - [ ] Enforce exact real YYYY-MM-DD validation for manually edited import dates with inline feedback and selected-import blocking.
 - [ ] Add an accessible calendar date picker to the import-candidate editing interface while preserving exact YYYY-MM-DD validation.
 - [ ] Profile and improve initial load, calendar rendering, navigation, and schedule-import responsiveness without removing MY PLAN features.
-- [ ] Code-split Import Schedule, Gemini Spark, and Administrator panel workspaces so they load on demand without affecting core planning flows.
+- [x] Code-split Import Schedule, Gemini Spark, and Administrator panel workspaces so they load on demand without affecting core planning flows.
 - [ ] Diagnose and fix the blank MY PLAN mobile and embedded sign-in display so users can authenticate and access private importer features.
