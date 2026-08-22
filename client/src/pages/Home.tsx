@@ -310,7 +310,14 @@ export default function Home() {
     };
     reader.readAsDataURL(file);
   };
-  const updateImportCandidate = (id: string, update: Partial<ImportCandidate>) => setImportCandidates(current => current.map(candidate => candidate.id === id ? { ...candidate, ...update } : candidate));
+  const updateImportCandidate = (id: string, update: Partial<ImportCandidate>) => {
+    if (typeof update.date === "string" && update.date && !isValidImportDate(update.date)) {
+      setImportMessage("Date needs the exact YYYY-MM-DD format and must be a real calendar day before it can be added.");
+    } else if (typeof update.date === "string" && isValidImportDate(update.date)) {
+      setImportMessage("Date accepted. You can now select this suggestion for import.");
+    }
+    setImportCandidates(current => current.map(candidate => candidate.id === id ? { ...candidate, ...update } : candidate));
+  };
   const importScheduleCandidates = (selected: ImportCandidate[]) => {
     const ready = selected.filter(candidate => isValidImportDate(candidate.date));
     const skipped = selected.length - ready.length;

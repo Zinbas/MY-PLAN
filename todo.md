@@ -145,7 +145,8 @@
 - [ ] Validate selected calendar writes and unselected-item exclusion with a public syllabus PDF containing explicit dates and times.
 - [ ] Validate image-based OCR with a public PNG/JPG academic schedule containing explicit dates and times, comparing source entries with selected-import readiness.
 - [ ] Validate manual editing of image-extracted event titles, dates, and optional times before selected confirmation.
-- [ ] Enforce exact real YYYY-MM-DD validation for manually edited import dates with inline feedback and selected-import blocking.
+- [x] Enforce exact real YYYY-MM-DD validation for manually edited import dates with inline feedback and selected-import blocking.
+- [x] Show an inline correction message on selected import candidates whose edited date is malformed or not a real calendar date.
 - [x] Add an accessible calendar date picker to the import-candidate editing interface while preserving exact YYYY-MM-DD validation.
 - [x] Implement and verify date-picker selection for import candidates, including keyboard access and strict real-date storage.
 - [ ] Profile and improve initial load, calendar rendering, navigation, and schedule-import responsiveness without removing MY PLAN features.
