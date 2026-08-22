@@ -137,3 +137,5 @@
 - [ ] Add regression coverage proving Spark event actions require authorization and cannot access another user’s private calendar data.
 - [ ] Complete and browser-verify the separate administrator panel’s privacy-preserving user-management and feature-operations controls.
 - [ ] Add successful-administrator, role-guardrail, and non-administrator denial regression coverage for the expanded administrator controls.
+- [ ] Validate the review-first schedule importer end to end with public routine image, PDF, and document samples, including review edits, controlled approval, and verification of resulting private calendar/task writes.
+- [ ] Diagnose and fix the blank MY PLAN mobile and embedded sign-in display so users can authenticate and access private importer features.

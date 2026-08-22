@@ -27,5 +27,9 @@ export const startLogin = () => {
   url.searchParams.set("state", state);
   url.searchParams.set("type", "signIn");
 
-  window.location.href = url.toString();
+  // Embedded previews and some mobile in-app browsers can render the external
+  // authorization portal as an empty surface. A user-initiated new tab keeps
+  // the provider page visible; the fallback preserves standard browser flow.
+  const opened = window.open(url.toString(), "_blank", "noopener,noreferrer");
+  if (!opened) window.location.href = url.toString();
 };
