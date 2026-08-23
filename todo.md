@@ -183,8 +183,8 @@
 - [x] Add explicit occurrence-only versus entire-series removal choices for recurring routine items so one deletion never silently removes all occurrences.
 - [x] Support removal of a selected recurring date only while preserving every other occurrence in the routine range.
 - [x] Add explicit selected-date-only versus entire-series editing for recurring routine items.
-- [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
-- [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.
+- [x] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
+- [x] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.
 - [x] Add priority-aware sorting to the To-do workspace so urgent work can be triaged without losing due-date context.
 - [x] Add a safe bulk completion action for the visible To-do selection, with a clear confirmation step.
 - [x] Add a seven-day completion and focus-time activity view to the Progress workspace using only recorded planning data.

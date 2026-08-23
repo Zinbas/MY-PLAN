@@ -21,7 +21,7 @@ type ImportWorkspaceProps = {
   onDiscard: (id: string) => void;
 };
 
-const weekdayText = (weekdays?: number[]) => (weekdays || []).map(day => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day]).filter(Boolean).join(", ");
+const weekdayText = (weekdays?: number[]) => (weekdays || []).map(day => ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][day]).filter(Boolean).join(", ");
 const formatTime12Hour = (value: string) => {
   const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
   if (!match) return value || "time not found";
@@ -49,7 +49,7 @@ function CandidateTime({ candidate, isWeekly, onUpdateCandidate }: { candidate: 
   const [draft, setDraft] = useState(formatTime12Hour(candidate.time));
   useEffect(() => setDraft(formatTime12Hour(candidate.time)), [candidate.time]);
   const commit = () => { const normalized = normalizeTimeInput(draft); if (normalized) onUpdateCandidate(candidate.id, { time: normalized }); else setDraft(formatTime12Hour(candidate.time)); };
-  return <label>{isWeekly ? "Grid time" : "Time"}<input aria-label="Imported time" value={draft} placeholder="e.g. 2:00 PM" onChange={event => setDraft(event.target.value)} onBlur={commit} onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }} /><small className="import-time-preview">Use 2:00 PM or 14:00</small></label>;
+  return <label>Time<input aria-label="Imported time" value={draft} placeholder="e.g. 2:00 PM" onChange={event => setDraft(event.target.value)} onBlur={commit} onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }} /><small className="import-time-preview">Use 2:00 PM or 14:00</small></label>;
 }
 
 function CandidateRow({ candidate, onUpdateCandidate, onDiscard }: Pick<ImportWorkspaceProps, "onUpdateCandidate" | "onDiscard"> & { candidate: ImportCandidate }) {
@@ -58,7 +58,7 @@ function CandidateRow({ candidate, onUpdateCandidate, onDiscard }: Pick<ImportWo
     <label className="import-approve"><input type="checkbox" checked={candidate.approved} onChange={event => onUpdateCandidate(candidate.id, { approved: event.currentTarget.checked })} /><span>Approve</span></label>
     <div className="import-fields">
       <label className="import-subject-field">{isWeekly ? "Subject" : "Title"}<input aria-label="Imported title" value={candidate.title} onChange={event => onUpdateCandidate(candidate.id, isWeekly ? { title: event.target.value, course: event.target.value } : { title: event.target.value })} /></label>
-      {isWeekly ? <><p className="weekly-timetable-label">Weekly timetable item <b>· {weekdayText(candidate.weekdays)}</b><b>· {formatTime12Hour(candidate.time)}</b></p>{candidate.date && candidate.repeatUntil ? <small className="weekly-range-applied">Range applied: {candidate.date} → {candidate.repeatUntil}</small> : null}</> : <div className="import-kind-switch">{(["event", "task", "block"] as ComposerKind[]).map(kind => <button key={kind} className={candidate.kind === kind ? "selected" : ""} onClick={() => onUpdateCandidate(candidate.id, { kind })}>{kind === "block" ? "Focus block" : kind}</button>)}</div>}
+      {isWeekly ? <><div className="weekly-cell-summary"><span><small>Day</small><b>{weekdayText(candidate.weekdays)}</b></span><span><small>Time</small><b>{formatTime12Hour(candidate.time)}</b></span><span><small>Range</small><b>{candidate.date && candidate.repeatUntil ? `${candidate.date} → ${candidate.repeatUntil}` : "Set below"}</b></span></div><small className="weekly-cell-note">One recurring day-and-time cell. Its subject and time stay editable before you add it.</small></> : <div className="import-kind-switch">{(["event", "task", "block"] as ComposerKind[]).map(kind => <button key={kind} className={candidate.kind === kind ? "selected" : ""} onClick={() => onUpdateCandidate(candidate.id, { kind })}>{kind === "block" ? "Focus block" : kind}</button>)}</div>}
       <div className="import-detail-fields">
         {!isWeekly ? <CandidateDate candidate={candidate} onUpdateCandidate={onUpdateCandidate} /> : null}
         <CandidateTime candidate={candidate} isWeekly={isWeekly} onUpdateCandidate={onUpdateCandidate} />
