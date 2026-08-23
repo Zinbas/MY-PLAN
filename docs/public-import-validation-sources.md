@@ -18,6 +18,8 @@ The isolated public Montgomery Public Schools 2026–2027 academic-calendar imag
 
 The public GATE 2026 examination-schedule image was cross-checked against the official IIT Guwahati schedule table. The isolated image extraction produced **eight dated, timed event candidates**. It retained all required verification pairs—**2026-02-07 09:30**, **2026-02-07 14:30**, and **2026-02-14 14:30**—with a three-hour duration for each session. This validation invokes no calendar, task, workspace, or storage write functionality, so the values remain review candidates only. The public source table and its corresponding image agree on the sampled date-time entries.[1]
 
+The combined selected-import regression set now covers public syllabus PDFs and public schedule images. The PDF workflow confirms selected-only task writing after manual review; the public GATE image workflow confirms a selected **2026-02-07 09:30** event writes with the source-derived **180-minute** duration and therefore ends at **12:30**, while its unselected 14:30 session is excluded. The browser tests use mock extraction responses based on the validated public source entries and restore disposable private scopes in `finally`; they do not invoke a model, upload a file, or touch any personal plan. The source-image date, time, and selected-write record agree with the official table.[1]
+
 ## References
 
 [1]: https://gate2026.iitg.ac.in/examination-schedule.html "GATE 2026 Examination Schedule — IIT Guwahati"
