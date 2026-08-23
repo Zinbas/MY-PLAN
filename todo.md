@@ -216,3 +216,6 @@
 - [x] Audit and harden MY PLAN authentication, authorization, browser data handling, import safety, HTTP security headers, and error disclosure without altering private planning data.
 - [x] Add regression coverage for the security hardening controls and document the verified security boundaries.
 - [x] Remediate audited direct and unused production dependency surfaces, verify spreadsheet-import compatibility, and re-run a clean production dependency audit.
+- [x] Restore production startup compatibility after the Express security upgrade without weakening the current security controls.
+- [x] Add purposeful, responsive animations for primary navigation, workspace changes, calendar actions, panels, cards, and feedback while respecting reduced-motion preferences.
+- [x] Add regression and visual checks for deployment startup and the calibrated animation experience.

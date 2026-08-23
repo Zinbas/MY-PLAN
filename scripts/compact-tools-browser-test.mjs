@@ -19,12 +19,14 @@ try {
   await sleep(160);
   const initial = await evaluate(`({ primary: [...document.querySelectorAll('.tools-primary button')].map(button => button.textContent.trim()), moreOpen: document.querySelector('.tools-more')?.open, scrollWidth: document.documentElement.scrollWidth, viewportWidth: innerWidth })`);
   if (!initial.primary.some(text => text.includes('Import a schedule')) || !initial.primary.some(text => text.includes('Account & calendar')) || initial.moreOpen || initial.scrollWidth > initial.viewportWidth + 1) throw new Error(`Workspace tools did not render as a compact primary-first surface: ${JSON.stringify(initial)}`);
+  const motion = await evaluate(`(() => { const card = document.querySelector('.tools-primary .tool-card'); return { cardAnimation: card ? getComputedStyle(card).animationName : '', reduced: matchMedia('(prefers-reduced-motion: reduce)').matches }; })()`);
+  if (!motion.reduced && !motion.cardAnimation.includes('my-plan-card-arrive')) throw new Error(`Workspace tools motion layer was not applied: ${JSON.stringify(motion)}`);
   await evaluate(`document.querySelector('.tools-more summary')?.click()`); await sleep(80);
   const expanded = await evaluate(`({ open: document.querySelector('.tools-more')?.open, hasSync: [...document.querySelectorAll('.tools-more button')].some(button => button.textContent.includes('Sync center')) })`);
   if (!expanded.open || !expanded.hasSync) throw new Error(`Workspace tools secondary utilities did not progressively disclose: ${JSON.stringify(expanded)}`);
   await evaluate(`([...document.querySelectorAll('.tools-primary button')].find(button => button.textContent.includes('Account & calendar')))?.click()`); await sleep(80);
   if (!(await evaluate(`document.body.innerText.includes('Account & connections')`))) throw new Error("Primary Workspace tools action did not open Account & connections");
-  console.log(JSON.stringify({ passed: 5, results: ["compact mobile shell rendered", "two primary tools remain prominent", "secondary tools start collapsed", "secondary tools expand on demand", "primary tool navigation works"] }, null, 2));
+  console.log(JSON.stringify({ passed: 6, results: ["compact mobile shell rendered", "two primary tools remain prominent", "secondary tools start collapsed", "primary tools use calibrated motion when allowed", "secondary tools expand on demand", "primary tool navigation works"] }, null, 2));
 } finally {
   await evaluate(`Object.keys(localStorage).filter(key => key.startsWith('my-plan-')).forEach(key => localStorage.removeItem(key)); const old = ${JSON.stringify(previous)}; Object.entries(old).forEach(([key, value]) => localStorage.setItem(key, value)); true`);
   await command("Emulation.clearDeviceMetricsOverride"); await command("Page.navigate", { url: "http://127.0.0.1:3000/" }); ws.close();

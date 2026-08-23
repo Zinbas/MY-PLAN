@@ -1,0 +1,83 @@
+/* Calibrated motion layer: animate intent and orientation, never reading or data entry. */
+@media (prefers-reduced-motion: no-preference) {
+  .tools-grid .tool-card,
+  .tools-primary .tool-card,
+  .tools-more .tool-card {
+    animation: my-plan-card-arrive 280ms cubic-bezier(.23,1,.32,1) both;
+  }
+
+  .tools-grid .tool-card:nth-child(2),
+  .tools-primary .tool-card:nth-child(2),
+  .tools-more .tool-card:nth-child(2) { animation-delay: 45ms; }
+  .tools-grid .tool-card:nth-child(3),
+  .tools-primary .tool-card:nth-child(3),
+  .tools-more .tool-card:nth-child(3) { animation-delay: 85ms; }
+  .tools-grid .tool-card:nth-child(4),
+  .tools-primary .tool-card:nth-child(4),
+  .tools-more .tool-card:nth-child(4) { animation-delay: 120ms; }
+
+  .tool-card,
+  .admin-command-grid article,
+  .admin-panel-metrics article,
+  .deadline-context article,
+  .weekly-cell-summary span,
+  .notification-list article {
+    transition: transform 170ms cubic-bezier(.23,1,.32,1), box-shadow 170ms cubic-bezier(.23,1,.32,1), border-color 170ms cubic-bezier(.23,1,.32,1), background 170ms cubic-bezier(.23,1,.32,1);
+  }
+
+  .tool-card:hover,
+  .admin-command-grid article:hover,
+  .admin-panel-metrics article:hover,
+  .deadline-context article:hover,
+  .weekly-cell-summary span:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(47,48,41,.08);
+  }
+
+  .tools-more summary,
+  .notification-trigger,
+  .notification-center header > button,
+  .notification-list article button,
+  .import-bulk-actions button,
+  .apply-weekly-range,
+  .admin-panel-links button,
+  .admin-command-grid button {
+    transition: transform 145ms cubic-bezier(.23,1,.32,1), background 160ms cubic-bezier(.23,1,.32,1), border-color 160ms cubic-bezier(.23,1,.32,1), color 160ms cubic-bezier(.23,1,.32,1);
+  }
+
+  .notification-trigger:hover { transform: translateY(-2px) rotate(-2deg); }
+  .tools-more summary:hover { color: var(--terracotta); }
+  .notification-list article button:hover { transform: translateX(2px); }
+
+  .notification-backdrop { animation: my-plan-scrim-in 150ms cubic-bezier(.23,1,.32,1) both; }
+  .notification-center { animation: my-plan-notification-in 240ms cubic-bezier(.23,1,.32,1) both; }
+  .notification-list article { animation: my-plan-card-arrive 220ms cubic-bezier(.23,1,.32,1) both; }
+  .notification-list article:nth-child(2) { animation-delay: 35ms; }
+  .notification-list article:nth-child(3) { animation-delay: 70ms; }
+
+  .workspace-metrics article strong,
+  .progress-summary article strong,
+  .admin-panel-metrics strong { animation: my-plan-number-settle 360ms cubic-bezier(.23,1,.32,1) both; }
+
+  @keyframes my-plan-card-arrive {
+    from { opacity: 0; transform: translateY(7px) scale(.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes my-plan-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes my-plan-notification-in { from { opacity: 0; transform: translateX(14px) scale(.985); } to { opacity: 1; transform: translateX(0) scale(1); } }
+  @keyframes my-plan-number-settle { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+}
+
+@media (max-width: 820px) and (prefers-reduced-motion: no-preference) {
+  .notification-backdrop { align-items: flex-end; }
+  .notification-center { animation-name: my-plan-notification-mobile-in; }
+  .tools-grid .tool-card,
+  .tools-primary .tool-card,
+  .tools-more .tool-card { animation-duration: 210ms; }
+
+  @keyframes my-plan-notification-mobile-in {
+    from { opacity: 0; transform: translateY(18px) scale(.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
