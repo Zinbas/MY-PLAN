@@ -14,7 +14,8 @@ import { mapSelectedImportCandidates } from "@/lib/importSelection";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
 import { onTimeCompletionStats, recentCompletedTasks, sortTodoTasks, weeklyActivity, type TodoSort } from "@/lib/taskInsights";
 import { loadScopedBlocks, loadScopedEvents, loadScopedTasks } from "@/lib/workspaceLoader";
-import { ArrowRight, BarChart3, BookOpenCheck, CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CirclePlus, Clock3, CloudCog, Copy, Edit3, ExternalLink, Flag, GraduationCap, ListChecks, ListTodo, LogIn, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Square, Star, Trash2, Upload, UserRound, Users, X } from "lucide-react";
+import { defaultNotificationPreferences, loadNotificationPreferences, loadReadNotificationIds, planningNotifications, saveReadNotificationIds, type NotificationPreferences } from "@/lib/notifications";
+import { ArrowRight, BarChart3, Bell, BookOpenCheck, CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CirclePlus, Clock3, CloudCog, Copy, Edit3, ExternalLink, Flag, GraduationCap, ListChecks, ListTodo, LogIn, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Square, Star, Trash2, Upload, UserRound, Users, X } from "lucide-react";
 
 const LazyAdminUserDirectory = lazy(() => import("./AdminUserDirectory"));
 const LazySparkWorkspace = lazy(() => import("./SparkWorkspace"));
@@ -137,6 +138,10 @@ export default function Home() {
   const [lastAutoImportIds, setLastAutoImportIds] = useState<{ blockIds: string[]; eventIds: string[]; taskIds: string[] } | null>(null);
   const [timerNow, setTimerNow] = useState(() => Date.now());
   const [toast, setToast] = useState("Your calendar can move beyond every semester. No date limit.");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => loadNotificationPreferences(localStorage, "guest"));
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => loadReadNotificationIds(localStorage, "guest"));
+  const [notificationReadyScope, setNotificationReadyScope] = useState(storageScope);
   const [conflictNotice, setConflictNotice] = useState<{ title: string; conflicts: { title: string; source: PlannerBlock["source"]; overlapMinutes: number }[] } | null>(null);
   const [recurringRemovalTarget, setRecurringRemovalTarget] = useState<PlannerBlock | null>(null);
   const [recurringEditTarget, setRecurringEditTarget] = useState<PlannerBlock | null>(null);
@@ -153,6 +158,9 @@ export default function Home() {
       setPersonalEvents(loadEvents(storageScope));
       setTasks(loadTasks(storageScope));
       setActiveTimer(loadActiveTimer(storageScope));
+      setNotificationPreferences(loadNotificationPreferences(localStorage, storageScope));
+      setReadNotificationIds(loadReadNotificationIds(localStorage, storageScope));
+      setNotificationReadyScope(storageScope);
       return;
     }
     localStorage.setItem(workspaceStorageKey("blocks", storageScope), JSON.stringify(plannerBlocks));
@@ -160,6 +168,16 @@ export default function Home() {
     localStorage.setItem(workspaceStorageKey("tasks", storageScope), JSON.stringify(tasks));
     if (activeTimer) localStorage.setItem(workspaceStorageKey("active-timer", storageScope), JSON.stringify(activeTimer)); else localStorage.removeItem(workspaceStorageKey("active-timer", storageScope));
   }, [activeTimer, personalEvents, plannerBlocks, storageScope, tasks]);
+  useEffect(() => {
+    if (notificationReadyScope !== storageScope) {
+      setNotificationPreferences(loadNotificationPreferences(localStorage, storageScope));
+      setReadNotificationIds(loadReadNotificationIds(localStorage, storageScope));
+      setNotificationReadyScope(storageScope);
+      return;
+    }
+    localStorage.setItem(workspaceStorageKey("notification-preferences", storageScope), JSON.stringify(notificationPreferences));
+    saveReadNotificationIds(localStorage, storageScope, readNotificationIds);
+  }, [notificationPreferences, notificationReadyScope, readNotificationIds, storageScope]);
   useEffect(() => { localStorage.setItem("my-plan-sidebar-collapsed", String(sidebarCollapsed)); }, [sidebarCollapsed]);
   useEffect(() => {
     if (!isAuthenticated || !isAdmin || !user?.id) return;
@@ -181,7 +199,7 @@ export default function Home() {
   useEffect(() => { if (!activeTimer?.startedAt) return; const interval = window.setInterval(() => setTimerNow(Date.now()), 1000); return () => window.clearInterval(interval); }, [activeTimer?.startedAt]);
   useEffect(() => { if (!isAuthenticated || welcomeRetired) return; localStorage.setItem("my-plan-welcome-retired", "true"); localStorage.setItem("my-plan-welcome-seen", "true"); setWelcomeRetired(true); setSection("calendar"); }, [isAuthenticated, welcomeRetired]);
   useEffect(() => {
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { closePopovers(); setShowComposer(false); setDateContextMenu(null); setMobileDateAction(null); setShowTour(false); } };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { closePopovers(); setShowComposer(false); setDateContextMenu(null); setMobileDateAction(null); setShowTour(false); setShowNotifications(false); } };
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
   });
@@ -220,6 +238,8 @@ export default function Home() {
   const linkedBlocks = useMemo<PlannerBlock[]>(() => (linkedEvents.data ?? []).map(event => ({ id: `linked-${event.id}`, title: event.title, startAt: event.startAt, endAt: event.endAt, source: "linked", priority: "normal" })), [linkedEvents.data]);
   const selectedLinkedCalendarCount = useMemo(() => (persistedConnections.data ?? []).reduce((total, connection) => total + connection.calendars.filter(calendar => calendar.isVisible).length, 0), [persistedConnections.data]);
   const allCalendarBlocks = useMemo(() => [...(isAdmin ? academicEvents : []), ...blocks, ...eventBlocks, ...taskBlocks, ...linkedBlocks], [blocks, eventBlocks, isAdmin, linkedBlocks, taskBlocks]);
+  const notificationItems = useMemo(() => planningNotifications(tasks, [...blocks, ...eventBlocks, ...taskBlocks], new Date(), notificationPreferences), [blocks, eventBlocks, notificationPreferences, taskBlocks, tasks]);
+  const unreadNotificationItems = useMemo(() => notificationItems.filter(item => !readNotificationIds.includes(item.id)), [notificationItems, readNotificationIds]);
   const calendarConflictCounts = useMemo(() => conflictCountsFor(allCalendarBlocks), [allCalendarBlocks]);
   const calendarCourses = useMemo(() => ["All courses / lists", ...Array.from(new Set([...allCalendarBlocks.map(event => event.course).filter(Boolean), ...tasks.map(task => task.course).filter(Boolean)])).sort()], [allCalendarBlocks, tasks]);
   const calendarTaskStatuses = useMemo(() => new Map(tasks.map(task => [task.id, taskStatus(task)])), [tasks]);
@@ -459,6 +479,8 @@ export default function Home() {
       {section === "import" ? <Suspense fallback={<section className="workspace-card"><p>Loading Import Schedule…</p></section>}><LazyImportWorkspace isAuthenticated={isAuthenticated} isScanning={extractSchedule.isPending} inputRef={importFileInput} fileName={importFileName} message={importMessage} candidates={importCandidates} onChooseFile={chooseImportFile} onAddApproved={addApprovedImportCandidates} canUndoLastImport={Boolean(lastAutoImportIds || inferredLastImportIds)} onUndoLastImport={undoLastAutomaticImport} onUpdateCandidate={updateImportCandidate} onDiscard={id => setImportCandidates(current => current.filter(item => item.id !== id))} /></Suspense> : null}
       {section === "spark" ? <Suspense fallback={<section className="workspace-card"><p>Loading Gemini Spark…</p></section>}><LazySparkWorkspace isAuthenticated={isAuthenticated} accessToken={sparkAccessToken} isPreparing={createSparkAccessToken.isPending} onCopyUrl={() => { navigator.clipboard?.writeText(`${window.location.origin}/api/mcp`); setToast("MCP route copied."); }} onCopyToken={() => { if (sparkAccessToken) navigator.clipboard?.writeText(sparkAccessToken); setToast("Spark credential copied."); }} onGenerateToken={() => createSparkAccessToken.mutate(undefined, { onSuccess: value => setSparkAccessToken(value.token), onError: () => setToast("Could not create a Spark credential. Please try again.") })} /></Suspense> : null}
     </main>
+    <button className="notification-trigger" aria-label={`Notifications${unreadNotificationItems.length ? `, ${unreadNotificationItems.length} unread` : ""}`} onClick={() => setShowNotifications(true)}><Bell size={18} />{unreadNotificationItems.length ? <b>{unreadNotificationItems.length > 9 ? "9+" : unreadNotificationItems.length}</b> : null}</button>
+    {showNotifications ? <div className="notification-backdrop" onMouseDown={() => setShowNotifications(false)}><section className="notification-center" role="dialog" aria-modal="true" aria-labelledby="notification-center-title" onMouseDown={event => event.stopPropagation()}><header><div><p className="kicker"><Bell size={14} /> Your notification center</p><h2 id="notification-center-title">Only what needs attention.</h2><p>Private to this MY PLAN workspace. Routine notices stay here instead of interrupting your device.</p></div><button aria-label="Close notifications" onClick={() => setShowNotifications(false)}><X size={17} /></button></header><div className="notification-preferences"><label><input type="checkbox" checked={notificationPreferences.taskDue} onChange={event => setNotificationPreferences(current => ({ ...current, taskDue: event.target.checked }))} /> Task deadlines</label><label><input type="checkbox" checked={notificationPreferences.upcomingPlan} onChange={event => setNotificationPreferences(current => ({ ...current, upcomingPlan: event.target.checked }))} /> Starting soon</label></div><div className="notification-actions"><span>{unreadNotificationItems.length ? `${unreadNotificationItems.length} unread` : "All caught up"}</span>{notificationItems.length ? <button onClick={() => setReadNotificationIds(current => Array.from(new Set([...current, ...notificationItems.map(item => item.id)])))}>Mark all read</button> : null}</div>{notificationItems.length ? <div className="notification-list">{notificationItems.map(item => <article key={item.id} className={readNotificationIds.includes(item.id) ? "is-read" : ""}><button onClick={() => { setReadNotificationIds(current => Array.from(new Set([...current, item.id]))); setShowNotifications(false); setSelectedDate(item.createdAt); setCursor(monthStart(item.createdAt)); openSection(item.target); }}><span>{item.kind === "overdue" ? "Overdue" : item.kind === "due-today" ? "Due today" : "Starting soon"}</span><strong>{item.title}</strong><small>{item.body}</small></button></article>)}</div> : <div className="notification-empty"><Bell size={22} /><strong>Nothing needs your attention.</strong><p>When a saved task is due or a plan is about to start, it will appear here.</p></div>}</section></div> : null}
     {dateContextMenu ? <section className="date-context-menu" role="menu" aria-label={`Actions for ${formatShort(dateContextMenu.date)}`} style={{ left: dateContextMenu.x, top: dateContextMenu.y }}><p>{formatShort(dateContextMenu.date)}</p><button role="menuitem" onClick={() => openComposerForDate("task", dateContextMenu.date)}><ListTodo size={15} /><span>Add task</span><small>Capture the next action</small></button><button role="menuitem" onClick={() => openComposerForDate("event", dateContextMenu.date)}><CalendarPlus size={15} /><span>Add event</span><small>Protect time for it</small></button><button role="menuitem" onClick={() => openComposerForDate("block", dateContextMenu.date)}><Clock3 size={15} /><span>Add focus block</span><small>Make space to concentrate</small></button></section> : null}
     {mobileDateAction ? <div className="mobile-date-sheet-backdrop" onPointerDown={() => setMobileDateAction(null)}><section className="mobile-date-sheet" role="dialog" aria-modal="true" aria-label={`Plan ${formatShort(mobileDateAction)}`} onPointerDown={event => event.stopPropagation()}><div className="sheet-handle" /><p className="kicker"><CalendarDays size={14} /> {formatShort(mobileDateAction)}</p><h2>What belongs here?</h2><p>Choose the kind of plan you want to place on this date.</p><button onClick={() => openComposerForDate("task", mobileDateAction)}><ListTodo size={17} /><span><strong>Add task</strong><small>Capture the next action</small></span><ArrowRight size={15} /></button><button onClick={() => openComposerForDate("event", mobileDateAction)}><CalendarPlus size={17} /><span><strong>Add event</strong><small>Protect time for it</small></span><ArrowRight size={15} /></button><button onClick={() => openComposerForDate("block", mobileDateAction)}><Clock3 size={17} /><span><strong>Add focus block</strong><small>Make room to concentrate</small></span><ArrowRight size={15} /></button></section></div> : null}
     {bulkCompleteTaskIds ? <div className="dialog-backdrop recurring-removal-backdrop" onMouseDown={() => setBulkCompleteTaskIds(null)}><section className="recurring-removal-sheet bulk-complete-sheet" role="dialog" aria-modal="true" aria-labelledby="bulk-complete-title" onMouseDown={event => event.stopPropagation()}><p className="kicker"><Check size={14} /> To-do review</p><h2 id="bulk-complete-title">Complete visible tasks?</h2><p>This will mark <strong>{bulkCompleteTaskIds.length} currently visible task{bulkCompleteTaskIds.length === 1 ? "" : "s"}</strong> as done. Tasks outside the current filters will not change.</p><div className="recurring-removal-actions"><button onClick={() => setBulkCompleteTaskIds(null)}>Cancel</button><button className="danger" onClick={confirmBulkComplete}>Mark visible tasks done</button></div></section></div> : null}

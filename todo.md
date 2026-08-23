@@ -192,3 +192,6 @@
 - [x] Add a seven-day completion and focus-time activity view to the Progress workspace using only recorded planning data.
 - [x] Add on-time completion and recent-completion insights to the Progress workspace without inventing productivity scores.
 - [x] Precompute calendar overlap counts once per visible planning set to reduce repeated conflict checks during filtering and event rendering.
+- [x] Add a private in-app Notification Center that surfaces actionable MY PLAN reminders without device-permission dependence.
+- [x] Add per-workspace notification preferences, read state, clear controls, and clear next-step actions without inventing notifications.
+- [x] Add regression coverage for notification generation, privacy scoping, read state, and empty-state behavior.
