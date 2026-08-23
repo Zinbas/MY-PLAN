@@ -27,6 +27,17 @@ export function isGoogleOAuthConfigured(config = getGoogleOAuthConfig()) {
   return Boolean(config.clientId && config.clientSecret && config.redirectUri);
 }
 
+export function googleOAuthReadiness(config = getGoogleOAuthConfig()) {
+  const ready = isGoogleOAuthConfigured(config);
+  return {
+    ready,
+    mode: ready ? "live" as const : "setup-pending" as const,
+    message: ready
+      ? "Google Calendar is ready to connect after MY PLAN sign-in."
+      : "Google Calendar setup is pending the owner’s OAuth credentials. You can keep planning locally in MY PLAN.",
+  };
+}
+
 export function buildGoogleAuthorizationUrl(config: Required<GoogleOAuthConfig>, state: string) {
   const url = new URL(GOOGLE_AUTH_URL);
   url.searchParams.set("client_id", config.clientId);

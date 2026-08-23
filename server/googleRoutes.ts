@@ -3,7 +3,7 @@
  * credentials are absent; once configured, the authorization route begins Google consent.
  */
 import type { Express, Request, Response } from "express";
-import { buildGoogleAuthorizationUrl, createConnectionState, encryptGoogleCredential, exchangeGoogleAuthorizationCode, getGoogleOAuthConfig, getGoogleProfile, googleActivationChecklist, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
+import { buildGoogleAuthorizationUrl, createConnectionState, encryptGoogleCredential, exchangeGoogleAuthorizationCode, getGoogleOAuthConfig, getGoogleProfile, googleActivationChecklist, googleOAuthReadiness, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
 import { consumeGoogleOAuthState, createGoogleOAuthState, getUserByOpenId, upsertGoogleCalendarConnection, upsertUser } from "./db";
 import { sdk } from "./_core/sdk";
 import { COOKIE_NAME } from "@shared/const";
@@ -22,7 +22,7 @@ function activationResponse(res: Response) {
 
 export function registerGoogleCalendarRoutes(app: Express) {
   app.get("/api/google/health", (_req, res) => {
-    res.json({ ready: isGoogleOAuthConfigured(), mode: isGoogleOAuthConfigured() ? "live" : "demo" });
+    res.json(googleOAuthReadiness());
   });
 
   app.get("/api/google/connect", async (req: Request, res: Response) => {

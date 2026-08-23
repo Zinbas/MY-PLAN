@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { googleActivationChecklist, isGoogleOAuthConfigured } from "./googleOAuth";
+import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
 import { getAdminOverview, listAdminUserDirectory, listOwnedLinkedCalendars, listUserCalendarConnections, listUserSyncedEvents, setManagedUserRole } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
@@ -38,7 +38,7 @@ export const appRouter = router({
   }),
   calendar: router({
     readiness: publicProcedure.query(() => ({
-      mode: isGoogleOAuthConfigured() ? "live" : "demo",
+      ...googleOAuthReadiness(),
       googleOAuthReady: isGoogleOAuthConfigured(),
       activationChecklist: googleActivationChecklist,
       sparkMcpStatus: "prepared" as const,

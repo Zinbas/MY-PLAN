@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGoogleAuthorizationUrl, decryptGoogleCredential, encryptGoogleCredential, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
+import { buildGoogleAuthorizationUrl, decryptGoogleCredential, encryptGoogleCredential, googleOAuthReadiness, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
 
 describe("Google OAuth preparation", () => {
   it("builds an authorization request with identity and minimal calendar scopes", () => {
@@ -20,6 +20,14 @@ describe("Google OAuth preparation", () => {
   it("only reports live readiness when all server-only OAuth values are present", () => {
     expect(isGoogleOAuthConfigured({ clientId: "id", clientSecret: "secret", redirectUri: "https://example.com/callback" })).toBe(true);
     expect(isGoogleOAuthConfigured({ clientId: "id", clientSecret: "secret" })).toBe(false);
+  });
+
+  it("provides a safe setup-pending message without disclosing configuration values", () => {
+    expect(googleOAuthReadiness({ clientId: "id" })).toEqual({
+      ready: false,
+      mode: "setup-pending",
+      message: "Google Calendar setup is pending the owner’s OAuth credentials. You can keep planning locally in MY PLAN.",
+    });
   });
 
   it("hashes OAuth state and encrypts stored credentials without leaving plaintext in the payload", () => {
