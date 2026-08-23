@@ -189,3 +189,4 @@
 - [x] Add a safe bulk completion action for the visible To-do selection, with a clear confirmation step.
 - [x] Add a seven-day completion and focus-time activity view to the Progress workspace using only recorded planning data.
 - [x] Add on-time completion and recent-completion insights to the Progress workspace without inventing productivity scores.
+- [x] Precompute calendar overlap counts once per visible planning set to reduce repeated conflict checks during filtering and event rendering.

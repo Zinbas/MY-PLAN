@@ -70,6 +70,8 @@ export const findTimeConflicts = (event: PlannerBlock, allEvents: PlannerBlock[]
 });
 export const isConflict = (event: PlannerBlock, allEvents: PlannerBlock[]) => findTimeConflicts(event, allEvents).length > 0;
 
+export const conflictCountsFor = (events: PlannerBlock[]) => new Map(events.map(event => [event.id, findTimeConflicts(event, events).length]));
+
 export const isTaskScheduled = (task: PlanTask) => Boolean(task.scheduledStartAt);
 
 export const isTaskComplete = (task: PlanTask) => task.completed || task.status === "done";

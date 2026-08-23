@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { excludeRecurringDate, expandRepeatingBlock, findTimeConflicts, type PlannerBlock } from "./ongoingCalendar";
+import { conflictCountsFor, excludeRecurringDate, expandRepeatingBlock, findTimeConflicts, type PlannerBlock } from "./ongoingCalendar";
 
 const block = (id: string, start: string, end: string, source: PlannerBlock["source"] = "planner"): PlannerBlock => ({ id, title: id, startAt: new Date(start), endAt: new Date(end), source });
 
@@ -22,6 +22,13 @@ describe("global time conflict detection", () => {
     const recurringOccurrence = block("routine:2026-09-01", "2026-09-01T10:00:00", "2026-09-01T11:00:00");
     const base = block("routine", "2026-09-01T10:00:00", "2026-09-01T11:00:00");
     expect(findTimeConflicts(base, [recurringOccurrence])).toEqual([]);
+  });
+
+  it("precomputes overlap counts once for every calendar item", () => {
+    const first = block("first", "2026-09-01T10:00:00", "2026-09-01T11:00:00");
+    const second = block("second", "2026-09-01T10:30:00", "2026-09-01T11:30:00");
+    const separate = block("separate", "2026-09-01T12:00:00", "2026-09-01T13:00:00");
+    expect(Array.from(conflictCountsFor([first, second, separate]).entries())).toEqual([["first", 1], ["second", 1], ["separate", 0]]);
   });
 });
 
