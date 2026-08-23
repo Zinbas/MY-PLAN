@@ -13,6 +13,7 @@ import { isValidImportDate } from "@/lib/importDates";
 import { mapSelectedImportCandidates } from "@/lib/importSelection";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
 import { onTimeCompletionStats, recentCompletedTasks, sortTodoTasks, weeklyActivity, type TodoSort } from "@/lib/taskInsights";
+import { loadScopedBlocks, loadScopedEvents, loadScopedTasks } from "@/lib/workspaceLoader";
 import { ArrowRight, BarChart3, BookOpenCheck, CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CirclePlus, Clock3, CloudCog, Copy, Edit3, ExternalLink, Flag, GraduationCap, ListChecks, ListTodo, LogIn, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Square, Star, Trash2, Upload, UserRound, Users, X } from "lucide-react";
 
 const LazyAdminUserDirectory = lazy(() => import("./AdminUserDirectory"));
@@ -59,9 +60,9 @@ const tourSteps: TourStep[] = [
   { eyebrow: "04 · Connect only when ready", title: "Accounts are optional, connections are explicit.", body: "Plan locally at any time. Sign in when you want a MY PLAN account, then separately approve Google Calendar when its secure connection is activated.", section: "accounts" },
 ];
 
-const loadBlocks = (scope = "guest"): PlannerBlock[] => { try { return JSON.parse(localStorage.getItem(workspaceStorageKey("blocks", scope)) || "[]").map((block: PlannerBlock) => ({ ...block, startAt: new Date(block.startAt), endAt: new Date(block.endAt), repeatUntil: block.repeatUntil ? new Date(block.repeatUntil) : null })); } catch { return []; } };
-const loadEvents = (scope = "guest"): PersonalEvent[] => { try { return JSON.parse(localStorage.getItem(workspaceStorageKey("events", scope)) || "[]").map((event: PersonalEvent) => ({ ...event, startAt: new Date(event.startAt), endAt: new Date(event.endAt) })); } catch { return []; } };
-const loadTasks = (scope = "guest"): PlanTask[] => { try { return JSON.parse(localStorage.getItem(workspaceStorageKey("tasks", scope)) || "[]").map((task: PlanTask) => ({ ...task, dueAt: new Date(task.dueAt), scheduledStartAt: task.scheduledStartAt ? new Date(task.scheduledStartAt) : null, createdAt: task.createdAt ? new Date(task.createdAt) : new Date(), completedAt: task.completedAt ? new Date(task.completedAt) : null, status: task.completed || task.status === "done" ? "done" : task.status ?? "open" })); } catch { return []; } };
+const loadBlocks = (scope = "guest"): PlannerBlock[] => loadScopedBlocks(localStorage, scope);
+const loadEvents = (scope = "guest"): PersonalEvent[] => loadScopedEvents(localStorage, scope);
+const loadTasks = (scope = "guest"): PlanTask[] => loadScopedTasks(localStorage, scope);
 const loadActiveTimer = (scope = "guest"): ActiveTaskTimer | null => { try { const value = JSON.parse(localStorage.getItem(workspaceStorageKey("active-timer", scope)) || "null"); return value?.taskId ? value : null; } catch { return null; } };
 const loadLegacyBlocks = (): PlannerBlock[] => { try { return JSON.parse(localStorage.getItem("my-plan-blocks") || "[]").map((block: PlannerBlock) => ({ ...block, startAt: new Date(block.startAt), endAt: new Date(block.endAt), repeatUntil: block.repeatUntil ? new Date(block.repeatUntil) : null })); } catch { return []; } };
 const loadLegacyEvents = (): PersonalEvent[] => { try { return JSON.parse(localStorage.getItem("my-plan-events") || "[]").map((event: PersonalEvent) => ({ ...event, startAt: new Date(event.startAt), endAt: new Date(event.endAt) })); } catch { return []; } };

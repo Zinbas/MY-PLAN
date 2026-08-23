@@ -104,7 +104,9 @@
 - [x] Validate deterministic ICS, CSV, XLSX, and ambiguous-date schedule-import handling through automated tests; visual review remains available before any calendar or task creation.
 - [x] Preserve the administrator’s existing academic calendar and planning data after administrator sign-in, including first-sign-in local-data migration.
 - [x] Give every non-administrator user a clean private calendar, task, and event workspace that cannot display or alter administrator data.
-- [ ] Add higher-level regression coverage for administrator baseline visibility and non-administrator private-workspace isolation beyond helper-function tests.
+- [x] Add higher-level regression coverage for administrator baseline visibility and non-administrator private-workspace isolation beyond helper-function tests.
+- [x] Add an app-flow regression that exercises guest, administrator, and non-administrator workspace loading with separate local storage scopes.
+- [x] Add browser-level or component-level coverage of actual workspace session transitions across guest, administrator, and non-administrator states.
 - [x] Ensure each user’s Google Calendar connection, selected calendars, mirrored events, and sync actions remain visible and writable only to that user.
 - [x] Add regression coverage for per-user Google Calendar connection and mirrored-event isolation.
 - [x] Let each signed-in user choose which of their own Google calendars to import and keep synchronized in their private MY PLAN workspace.
