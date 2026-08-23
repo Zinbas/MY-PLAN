@@ -215,3 +215,4 @@
 - [x] Remove Account & Calendar and Sync Center shortcuts from administrator-only guidance so those user tools remain exclusively framed under Workspace tools.
 - [x] Audit and harden MY PLAN authentication, authorization, browser data handling, import safety, HTTP security headers, and error disclosure without altering private planning data.
 - [x] Add regression coverage for the security hardening controls and document the verified security boundaries.
+- [x] Remediate audited direct and unused production dependency surfaces, verify spreadsheet-import compatibility, and re-run a clean production dependency audit.

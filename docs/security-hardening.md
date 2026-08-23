@@ -13,6 +13,7 @@ MY PLAN keeps personal planning data private through user-scoped persistence, pr
 | Private MCP credential | The legacy compatible-client endpoint accepts bearer credentials only, does not cache responses, and challenges unauthenticated requests as bearer authentication. | MCP regression coverage. |
 | Calendar/OAuth failures | Credential-pending and renewal errors use safe generic responses and do not reveal OAuth values or internal exception text. | Google readiness and route regressions. |
 | Administrator scope | The Administrator panel exposes aggregate operational totals only. Account & Calendar and Sync Center remain user-facing utilities under Workspace tools. | Three-session browser privacy regression. |
+| Production dependencies | Unused template chat and chart surfaces were removed. SheetJS now uses the current official distribution; audited HTTP, data, and identifier libraries were upgraded. | Final `pnpm audit --prod` produced no remaining findings. |
 
 ## Important limitation
 
@@ -20,4 +21,4 @@ The current private MCP bearer flow is deliberately **not represented as Gemini 
 
 ## Validation record
 
-The hardening update passed **66 Vitest tests**, TypeScript checking, a production build, focused HTTP header inspection, cross-origin write rejection, and the administrator/member/guest privacy browser regression. The security controls are defense-in-depth measures; continued credential hygiene, dependency updates, and live OAuth verification remain required before enabling external account connections.
+The hardening update passed **66 Vitest tests**, TypeScript checking, a production build, focused HTTP header inspection, cross-origin write rejection, the administrator/member/guest privacy browser regression, spreadsheet-import regression coverage after the SheetJS upgrade, and a clean production dependency audit. The security controls are defense-in-depth measures; continued credential hygiene, dependency updates, and live OAuth verification remain required before enabling external account connections.

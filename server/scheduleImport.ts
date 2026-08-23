@@ -38,6 +38,9 @@ function cleanText(value: unknown) {
 }
 
 function dateOnly(value: unknown) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return `${String(value.getFullYear()).padStart(4, "0")}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+  }
   if (typeof value === "number" && value > 1 && value < 100_000) {
     const parsedExcelDate = XLSX.SSF.parse_date_code(value);
     if (parsedExcelDate) return `${String(parsedExcelDate.y).padStart(4, "0")}-${String(parsedExcelDate.m).padStart(2, "0")}-${String(parsedExcelDate.d).padStart(2, "0")}`;
@@ -53,6 +56,13 @@ function dateOnly(value: unknown) {
 }
 
 function timeOnly(value: unknown) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+  }
+  if (typeof value === "number" && value >= 0 && value < 1) {
+    const minutes = Math.round(value * 24 * 60) % (24 * 60);
+    return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  }
   const text = cleanText(value);
   const match = text.match(/(?:^|\s)(\d{1,2}):(\d{2})(?:\s*([AaPp][Mm]))?(?:\s|$)/);
   if (!match) return "";
