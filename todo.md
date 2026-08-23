@@ -151,7 +151,7 @@
 - [x] Show an inline correction message on selected import candidates whose edited date is malformed or not a real calendar date.
 - [x] Add an accessible calendar date picker to the import-candidate editing interface while preserving exact YYYY-MM-DD validation.
 - [x] Implement and verify date-picker selection for import candidates, including keyboard access and strict real-date storage.
-- [ ] Profile and improve initial load, calendar rendering, navigation, and schedule-import responsiveness without removing MY PLAN features.
+- [x] Profile and improve initial load, calendar rendering, navigation, and schedule-import responsiveness without removing MY PLAN features.
 - [x] Code-split Import Schedule, Gemini Spark, and Administrator panel workspaces so they load on demand without affecting core planning flows.
 - [ ] Diagnose and fix the blank MY PLAN mobile and embedded sign-in display so users can authenticate and access private importer features.
 - [x] Improve timetable-image extraction to preserve every visible recurring class, day, time slot, course, and room where legible.
