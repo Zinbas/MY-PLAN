@@ -153,7 +153,7 @@
 - [x] Implement and verify date-picker selection for import candidates, including keyboard access and strict real-date storage.
 - [x] Profile and improve initial load, calendar rendering, navigation, and schedule-import responsiveness without removing MY PLAN features.
 - [x] Code-split Import Schedule, Gemini Spark, and Administrator panel workspaces so they load on demand without affecting core planning flows.
-- [ ] Diagnose and fix the blank MY PLAN mobile and embedded sign-in display so users can authenticate and access private importer features.
+- [x] Diagnose and fix the blank MY PLAN mobile and embedded sign-in display so users can authenticate and access private importer features.
 - [x] Improve timetable-image extraction to preserve every visible recurring class, day, time slot, course, and room where legible.
 - [x] Add a weekly-timetable start-date and recurrence completion flow for extracted items that have weekday/time information but no calendar date.
 - [x] Strengthen the import-review confirmation with a prominent Add selected to MY PLAN action and clear selected-item count.
