@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expandRepeatingBlock, findTimeConflicts, type PlannerBlock } from "./ongoingCalendar";
+import { excludeRecurringDate, expandRepeatingBlock, findTimeConflicts, type PlannerBlock } from "./ongoingCalendar";
 
 const block = (id: string, start: string, end: string, source: PlannerBlock["source"] = "planner"): PlannerBlock => ({ id, title: id, startAt: new Date(start), endAt: new Date(end), source });
 
@@ -30,5 +30,12 @@ describe("recurring routine exceptions", () => {
     const recurring: PlannerBlock = { id: "tutorial", title: "Tutorial/Remedial", startAt: new Date("2026-08-22T14:00:00"), endAt: new Date("2026-08-22T15:00:00"), source: "planner", repeat: "weekly", repeatUntil: new Date("2026-09-12T23:59:00"), excludedDates: ["2026-08-29"] };
     const expanded = expandRepeatingBlock(recurring, new Date("2026-08-20"), new Date("2026-09-20"));
     expect(expanded.map(block => block.startAt.toISOString().slice(0, 10))).toEqual(["2026-08-22", "2026-09-05", "2026-09-12"]);
+  });
+
+  it("records a selected recurring date once even if the action is repeated", () => {
+    const recurring = block("tutorial", "2026-08-22T14:00:00", "2026-08-22T15:00:00");
+    const once = excludeRecurringDate(recurring, new Date("2026-08-29T14:00:00"));
+    const twice = excludeRecurringDate(once, new Date("2026-08-29T14:00:00"));
+    expect(twice.excludedDates).toEqual(["2026-08-29"]);
   });
 });

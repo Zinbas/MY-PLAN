@@ -182,5 +182,6 @@
 - [x] Add a bulk action that applies the same Starts on and Repeats until dates to all selected weekly timetable classes.
 - [x] Add explicit occurrence-only versus entire-series removal choices for recurring routine items so one deletion never silently removes all occurrences.
 - [x] Support removal of a selected recurring date only while preserving every other occurrence in the routine range.
+- [x] Add explicit selected-date-only versus entire-series editing for recurring routine items.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.

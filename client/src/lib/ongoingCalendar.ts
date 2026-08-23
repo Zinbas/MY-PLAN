@@ -93,6 +93,11 @@ export const taskEndAt = (task: PlanTask) => {
   return new Date(start.getTime() + (task.durationMinutes ?? 60) * 60 * 1000);
 };
 
+export const excludeRecurringDate = (block: PlannerBlock, date: Date): PlannerBlock => ({
+  ...block,
+  excludedDates: Array.from(new Set([...(block.excludedDates ?? []), dateKey(date)])),
+});
+
 export function expandRepeatingBlock(block: PlannerBlock, start: Date, end: Date): PlannerBlock[] {
   const result: PlannerBlock[] = [];
   let cursor = new Date(block.startAt);
