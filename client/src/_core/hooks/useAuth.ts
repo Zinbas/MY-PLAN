@@ -1,4 +1,5 @@
 import { startLogin } from "@/const";
+import { safelySetBrowserStorage } from "@/lib/safeBrowserStorage";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
@@ -53,12 +54,11 @@ export function useAuth(options?: UseAuthOptions) {
   const state = useMemo(() => {
     // Some embedded, private, or strict-tracking browser contexts expose the
     // page but deny localStorage. Auth state must still render normally.
-    try {
-      localStorage.setItem(
-        "manus-runtime-user-info",
-        JSON.stringify(meQuery.data)
-      );
-    } catch {}
+    safelySetBrowserStorage(
+      typeof window === "undefined" ? null : localStorage,
+      "manus-runtime-user-info",
+      JSON.stringify(meQuery.data),
+    );
     return {
       user: meQuery.data ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,

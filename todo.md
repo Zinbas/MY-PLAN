@@ -195,7 +195,7 @@
 - [x] Add a private in-app Notification Center that surfaces actionable MY PLAN reminders without device-permission dependence.
 - [x] Add per-workspace notification preferences, read state, clear controls, and clear next-step actions without inventing notifications.
 - [x] Add regression coverage for notification generation, privacy scoping, read state, and empty-state behavior.
-- [ ] Audit and repair the MY PLAN sign-in flow so supported authentication states never render a blank application screen.
+- [x] Audit and repair the MY PLAN sign-in flow so supported authentication states never render a blank application screen.
 - [ ] Audit and repair Google Calendar OAuth readiness, connection redirects, and user-facing setup feedback without exposing credentials.
 - [ ] Add isolated regression coverage for authentication failure states, Google readiness, and connection-route safeguards.
 - [x] Verify the MY PLAN Spark connection flow and provide user-safe setup instructions without exposing access tokens.
