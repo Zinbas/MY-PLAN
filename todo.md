@@ -206,3 +206,4 @@
 - [x] Use the user-supplied note-mark image as the MY PLAN app logo across branded application surfaces.
 - [x] Add a concise MY PLAN loading screen and branded loading states for slower workspace and connection views.
 - [x] Add gentle, reduced-motion-aware MY PLAN loading animations around the supplied logo.
+- [x] Refine the MY PLAN loading screen into a more polished paper-cover composition with clearer hierarchy and calmer motion.

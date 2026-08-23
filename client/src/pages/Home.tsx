@@ -3,6 +3,7 @@
  * surface, editorial typography, notebook rules, restrained terracotta signals, and quiet motion.
  */
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import "./loader.css";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -23,7 +24,7 @@ const LazyImportWorkspace = lazy(() => import("./ImportWorkspace"));
 const MY_PLAN_LOGO_URL = "/manus-storage/my-plan-note-mark_567e5611.jpg";
 
 function BrandLoader({ label, compact = false }: { label: string; compact?: boolean }) {
-  return <section className={`my-plan-loader ${compact ? "is-compact" : ""}`} role="status" aria-live="polite"><img src={MY_PLAN_LOGO_URL} alt="MY PLAN" /><div><strong>MY PLAN</strong><span>{label}</span></div></section>;
+  return <section className={`my-plan-loader ${compact ? "is-compact" : ""}`} role="status" aria-live="polite"><div className="loader-cover"><div className="loader-stamp"><img src={MY_PLAN_LOGO_URL} alt="MY PLAN" /></div><div className="loader-copy"><p>MY PLAN</p><strong>{label}</strong><span>{compact ? "Almost ready" : "Opening your paper workspace"}</span></div><div className="loader-progress" aria-hidden="true"><i /></div></div></section>;
 }
 
 type ViewMode = "month" | "week" | "agenda";
