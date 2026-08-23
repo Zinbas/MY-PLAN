@@ -201,8 +201,13 @@ export function normalizeCandidates(value: unknown): ScheduleCandidate[] {
 }
 
 export function deduplicateTimetableCandidates(candidates: ScheduleCandidate[]) {
+  const perDayCandidates = candidates.flatMap(candidate => {
+    const weekdays = Array.from(new Set(candidate.weekdays.filter(day => Number.isInteger(day) && day >= 0 && day <= 6)));
+    if (weekdays.length < 2) return [{ ...candidate, weekdays }];
+    return weekdays.map(day => ({ ...candidate, id: `${candidate.id}-weekday-${day}`, weekdays: [day] }));
+  });
   const seen = new Map<string, ScheduleCandidate>();
-  for (const candidate of candidates) {
+  for (const candidate of perDayCandidates) {
     const weekday = candidate.weekdays.length === 1 ? candidate.weekdays[0] : null;
     const slot = weekday == null || !candidate.time ? "" : `${weekday}|${candidate.time}`;
     const key = slot || `unique|${candidate.id}`;
@@ -214,7 +219,9 @@ export function deduplicateTimetableCandidates(candidates: ScheduleCandidate[]) 
       + value.confidence;
     if (score(candidate) > score(current)) seen.set(key, candidate);
   }
-  return Array.from(seen.values());
+  return Array.from(seen.values()).map(candidate => candidate.weekdays.length
+    ? { ...candidate, course: candidate.title }
+    : candidate);
 }
 
 function parseModelCandidates(value: unknown) {

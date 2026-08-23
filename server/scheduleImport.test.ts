@@ -41,5 +41,14 @@ describe("schedule import parsers", () => {
     expect(candidates).toHaveLength(2);
     expect(candidates.find(candidate => candidate.weekdays[0] === 1)?.id).toBe("right");
     expect(candidates.find(candidate => candidate.weekdays[0] === 2)?.id).toBe("other-slot");
+    expect(candidates.every(candidate => candidate.course === candidate.title)).toBe(true);
+  });
+
+  it("splits an ambiguous multi-day timetable suggestion into one candidate for each reviewable day cell", () => {
+    const candidates = deduplicateTimetableCandidates([
+      { id: "combined", title: "Data Structures", kind: "block", date: "", time: "10:00", durationMinutes: 60, course: "Data Structures", notes: "", weekdays: [1, 3, 3], confidence: 0.8 },
+    ]);
+    expect(candidates).toHaveLength(2);
+    expect(candidates.map(candidate => candidate.weekdays)).toEqual([[1], [3]]);
   });
 });
