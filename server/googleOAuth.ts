@@ -34,7 +34,7 @@ export function googleOAuthReadiness(config = getGoogleOAuthConfig()) {
     mode: ready ? "live" as const : "setup-pending" as const,
     message: ready
       ? "Google Calendar is ready to connect after MY PLAN sign-in."
-      : "Google Calendar setup is pending the owner’s OAuth credentials. You can keep planning locally in MY PLAN.",
+      : "Google Calendar setup is pending the owner’s OAuth credentials. Calendar API and OAuth are the only required Google services; you can keep planning locally in MY PLAN.",
   };
 }
 
@@ -97,6 +97,7 @@ export async function getGoogleProfile(accessToken: string): Promise<GoogleProfi
 export const googleActivationChecklist = [
   "Create a Google Cloud project owned by the app owner.",
   "Enable the Google Calendar API.",
+  "Use only Calendar API and OAuth for this setup; do not enable paid Google Cloud products.",
   "Configure the OAuth consent screen and add test users while the app is in testing.",
   "Create a Web application OAuth client and add the application callback URL.",
   "Set GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, and GOOGLE_OAUTH_REDIRECT_URI in the project settings.",
@@ -105,7 +106,7 @@ export const googleActivationChecklist = [
 export function googleOAuthSetupPendingResponse() {
   return {
     code: "GOOGLE_OAUTH_NOT_CONFIGURED",
-    message: "Google Calendar activation requires the app owner's Google OAuth credentials.",
+    message: "Google Calendar activation requires the app owner's Google OAuth credentials. No paid Google Cloud product is required for this Calendar-only setup.",
     checklist: googleActivationChecklist,
   } as const;
 }

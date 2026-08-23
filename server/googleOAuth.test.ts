@@ -26,15 +26,16 @@ describe("Google OAuth preparation", () => {
     expect(googleOAuthReadiness({ clientId: "id" })).toEqual({
       ready: false,
       mode: "setup-pending",
-      message: "Google Calendar setup is pending the owner’s OAuth credentials. You can keep planning locally in MY PLAN.",
+      message: "Google Calendar setup is pending the owner’s OAuth credentials. Calendar API and OAuth are the only required Google services; you can keep planning locally in MY PLAN.",
     });
   });
 
   it("returns a safe retry-later payload for every credential-pending Google route", () => {
     const payload = googleOAuthSetupPendingResponse();
     expect(payload.code).toBe("GOOGLE_OAUTH_NOT_CONFIGURED");
-    expect(payload.message).toBe("Google Calendar activation requires the app owner's Google OAuth credentials.");
-    expect(payload.checklist).toHaveLength(5);
+    expect(payload.message).toBe("Google Calendar activation requires the app owner's Google OAuth credentials. No paid Google Cloud product is required for this Calendar-only setup.");
+    expect(payload.checklist).toHaveLength(6);
+    expect(payload.checklist.join(" ")).toContain("do not enable paid Google Cloud products");
     expect(JSON.stringify(payload)).not.toContain("client-secret");
     expect(JSON.stringify(payload)).not.toContain("refresh-token");
   });

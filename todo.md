@@ -49,7 +49,7 @@
 - [x] Refine hover, pointer-exit, and popover behavior so dismissed controls do not unexpectedly reopen.
 - [x] Add automated coverage for the expanded event, task, and interaction workflows on desktop and mobile.
 - [x] Render saved personal-event course/list and notes details in the calendar workflow, with desktop and mobile regression coverage.
-- [ ] Keep the Google OAuth testing setup limited to free Calendar API and OAuth resources, without paid Google Cloud products.
+- [x] Keep the Google OAuth testing setup limited to free Calendar API and OAuth resources, without paid Google Cloud products.
 - [ ] Revoke the OAuth client whose secret was accidentally exposed before creating a replacement client and enabling live activation.
 
 - [x] Research student and professional productivity needs across trusted product documentation and public user discussions.
