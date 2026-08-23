@@ -32,4 +32,12 @@ describe("selected import mapping", () => {
     expect(mapped.blocks[0].startAt.getHours()).toBe(14);
     expect(mapped.blocks[0].repeatUntil?.toISOString()).toContain("2026-12-18T23:59");
   });
+
+  it("maps every approved weekly timetable candidate in a large selection", () => {
+    const weeklyCandidates = Array.from({ length: 30 }, (_, index) => ({ id: `weekly-${index}`, title: `Routine ${index + 1}`, kind: "block" as const, date: "2026-08-22", time: `${String(8 + (index % 8)).padStart(2, "0")}:00`, durationMinutes: 60, course: "Routine", notes: "", weekdays: [index % 7] }));
+    const mapped = mapSelectedImportCandidates(weeklyCandidates, 1_700_000_000_000, "2026-12-18");
+    expect(mapped.ready).toHaveLength(30);
+    expect(mapped.blocks).toHaveLength(30);
+    expect(mapped.blocks.every(block => block.repeat === "weekly" && block.repeatUntil?.toISOString().includes("2026-12-18T23:59"))).toBe(true);
+  });
 });

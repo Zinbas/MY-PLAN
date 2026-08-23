@@ -175,5 +175,8 @@
 - [x] Replace the overflowing mobile calendar filter panel with a compact inset sheet containing only Overlaps, Type, Priority, and Course/list.
 - [x] Add a smooth reduced-motion-aware slide-up animation to the mobile calendar filter sheet.
 - [x] Add a compact active-filter notification badge to the main calendar Filters button.
+- [x] Display timetable review times in 12-hour AM/PM format while preserving the underlying saved time values.
+- [x] Add Select all and Clear all approval controls for large imported timetable reviews.
+- [x] Diagnose and fix the Add selected action so approved timetable items either import reliably or show a precise blocking validation message.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.

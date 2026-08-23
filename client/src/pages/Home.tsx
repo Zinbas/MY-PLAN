@@ -366,30 +366,34 @@ export default function Home() {
   };
   const importScheduleCandidates = (selected: ImportCandidate[], weeklyRepeatUntil?: string) => {
     const { ready, skipped, blocks: importedBlocks, events: importedEvents, tasks: importedTasks } = mapSelectedImportCandidates(selected, Date.now(), weeklyRepeatUntil);
-    if (!ready.length) { setImportMessage("Select at least one item and enter a real date in YYYY-MM-DD format before adding it."); return; }
+    if (!ready.length) { setImportMessage("Select at least one item and enter a real date in YYYY-MM-DD format before adding it."); return false; }
     setPlannerBlocks(current => [...current, ...importedBlocks]);
     setPersonalEvents(current => [...current, ...importedEvents]);
     setTasks(current => [...current, ...importedTasks]);
     const importedTimed = [...importedBlocks, ...importedEvents.map(event => ({ ...event, source: "event" as const })), ...importedTasks.filter(task => task.scheduledStartAt).map(task => ({ id: task.id, title: task.title, startAt: task.scheduledStartAt!, endAt: taskEndAt(task), source: "task" as const, priority: task.priority }))];
     const firstImportedConflict = importedTimed.find(item => announceConflicts(item.title, item));
     setLastAutoImportIds({ blockIds: importedBlocks.map(item => item.id), eventIds: importedEvents.map(item => item.id), taskIds: importedTasks.map(item => item.id) });
-    setImportCandidates(current => current.filter(candidate => !candidate.approved));
+    const importedIds = new Set(ready.map(candidate => candidate.id));
+    setImportCandidates(current => current.filter(candidate => !importedIds.has(candidate.id)));
     setImportMessage(`${ready.length} selected item${ready.length === 1 ? "" : "s"} added to your private MY PLAN workspace.${firstImportedConflict ? " Overlaps were found; review them before relying on the new schedule." : ""}${skipped ? ` ${skipped} selected candidate${skipped === 1 ? " needs" : "s need"} a complete date before it can be added.` : ""} Blank times use 9:00 AM.`);
     setToast(`Imported ${ready.length} selected plan item${ready.length === 1 ? "" : "s"}. Undo is available below.`);
+    return true;
   };
   const addApprovedImportCandidates = (weeklyStart?: string, weeklyEnd?: string) => {
     const selected = importCandidates.filter(candidate => candidate.approved);
     const hasWeeklyRoutine = selected.some(candidate => candidate.weekdays?.length);
+    if (!selected.length) { setImportMessage("Select at least one suggestion before adding it to MY PLAN."); return false; }
     if (hasWeeklyRoutine && (!isValidImportDate(weeklyStart || "") || !isValidImportDate(weeklyEnd || ""))) {
       setImportMessage("Choose real start and repeat-until dates before adding a weekly routine.");
-      return;
+      return false;
     }
     if (hasWeeklyRoutine && weeklyEnd! < weeklyStart!) {
       setImportMessage("The repeat-until date must be on or after the routine start date.");
-      return;
+      return false;
     }
-    importScheduleCandidates(selected.map(candidate => candidate.weekdays?.length ? { ...candidate, date: weeklyStart! } : candidate), weeklyEnd);
+    return importScheduleCandidates(selected.map(candidate => candidate.weekdays?.length ? { ...candidate, date: weeklyStart! } : candidate), weeklyEnd);
   };
+  const setAllImportCandidatesApproved = (approved: boolean) => setImportCandidates(current => current.map(candidate => ({ ...candidate, approved })));
   const undoLastAutomaticImport = () => {
     const rollback = lastAutoImportIds || inferredLastImportIds;
     if (!rollback) return;
