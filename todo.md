@@ -208,3 +208,7 @@
 - [x] Add gentle, reduced-motion-aware MY PLAN loading animations around the supplied logo.
 - [x] Refine the MY PLAN loading screen into a more polished paper-cover composition with clearer hierarchy and calmer motion.
 - [x] Clarify in the Gemini Spark workspace that the current private MCP credential is not compatible with Gemini until standards-based OAuth is available.
+
+- [x] Add optional, non-gamified course/project context and relevant upcoming-deadline cues inside existing Calendar, To-do, Progress, and Today surfaces without creating a separate study dashboard.
+- [x] Simplify Workspace tools into a calm, concise utility index with clear primary actions and progressive disclosure for connection and import details.
+- [x] Add responsive browser and unit regression coverage for the compact academic context and simplified Workspace tools experience.
