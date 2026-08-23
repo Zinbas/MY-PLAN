@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findTimeConflicts, type PlannerBlock } from "./ongoingCalendar";
+import { expandRepeatingBlock, findTimeConflicts, type PlannerBlock } from "./ongoingCalendar";
 
 const block = (id: string, start: string, end: string, source: PlannerBlock["source"] = "planner"): PlannerBlock => ({ id, title: id, startAt: new Date(start), endAt: new Date(end), source });
 
@@ -22,5 +22,13 @@ describe("global time conflict detection", () => {
     const recurringOccurrence = block("routine:2026-09-01", "2026-09-01T10:00:00", "2026-09-01T11:00:00");
     const base = block("routine", "2026-09-01T10:00:00", "2026-09-01T11:00:00");
     expect(findTimeConflicts(base, [recurringOccurrence])).toEqual([]);
+  });
+});
+
+describe("recurring routine exceptions", () => {
+  it("omits only the selected excluded date and retains the rest of a weekly series", () => {
+    const recurring: PlannerBlock = { id: "tutorial", title: "Tutorial/Remedial", startAt: new Date("2026-08-22T14:00:00"), endAt: new Date("2026-08-22T15:00:00"), source: "planner", repeat: "weekly", repeatUntil: new Date("2026-09-12T23:59:00"), excludedDates: ["2026-08-29"] };
+    const expanded = expandRepeatingBlock(recurring, new Date("2026-08-20"), new Date("2026-09-20"));
+    expect(expanded.map(block => block.startAt.toISOString().slice(0, 10))).toEqual(["2026-08-22", "2026-09-05", "2026-09-12"]);
   });
 });

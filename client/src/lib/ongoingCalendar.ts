@@ -13,6 +13,7 @@ export type PlannerBlock = {
   completed?: boolean;
   repeat?: RepeatRule;
   repeatUntil?: Date | null;
+  excludedDates?: string[];
   checklist?: { id: string; label: string; done: boolean }[];
 };
 
@@ -100,7 +101,7 @@ export function expandRepeatingBlock(block: PlannerBlock, start: Date, end: Date
   while (cursor < end && cursor <= until && count < 600) {
     const duration = block.endAt.getTime() - block.startAt.getTime();
     const occurrence = { ...block, id: `${block.id}:${dateKey(cursor)}`, startAt: new Date(cursor), endAt: new Date(cursor.getTime() + duration) };
-    if (isWithin(occurrence, start, end)) result.push(occurrence);
+    if (isWithin(occurrence, start, end) && !block.excludedDates?.includes(dateKey(cursor))) result.push(occurrence);
     if (block.repeat === "none" || !block.repeat) break;
     if (block.repeat === "daily") cursor = addDays(cursor, 1);
     else if (block.repeat === "weekdays") { cursor = addDays(cursor, 1); while (cursor.getDay() === 0 || cursor.getDay() === 6) cursor = addDays(cursor, 1); }
