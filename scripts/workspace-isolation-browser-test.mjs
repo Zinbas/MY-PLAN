@@ -50,7 +50,7 @@ try {
       await evaluate(`(() => [...document.querySelectorAll('.side-nav button')].find(button => button.textContent.includes('Admin panel'))?.click())()`);
       await sleep(180);
       const adminPanel = await evaluate(`({ text: document.body.innerText, controls: [...document.querySelectorAll('.admin-panel button')].map(button => button.textContent.trim()) })`);
-      if (!adminPanel.text.includes('Plan stewardship, not surveillance.') || !adminPanel.text.includes('Privacy guardrail is active') || adminPanel.text.includes('Member-only task') || !adminPanel.controls.some(label => label.includes('Refresh overview')) || !adminPanel.controls.some(label => label.includes('Open Accounts')) || !adminPanel.controls.some(label => label.includes('Open Sync Center'))) throw new Error('Administrator privacy panel verification failed');
+      if (!adminPanel.text.includes('Plan stewardship, not surveillance.') || !adminPanel.text.includes('Privacy guardrail is active') || !adminPanel.text.includes('Those are personal planning utilities, not administrator controls.') || adminPanel.text.includes('Member-only task') || !adminPanel.controls.some(label => label.includes('Refresh overview')) || adminPanel.controls.some(label => label.includes('Open Accounts')) || adminPanel.controls.some(label => label.includes('Open Sync Center'))) throw new Error('Administrator privacy panel verification failed');
     }
     results.push(scenario.label);
   }

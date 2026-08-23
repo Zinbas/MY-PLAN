@@ -116,9 +116,8 @@ export function registerGoogleCalendarRoutes(app: Express) {
       const result = await renewExpiringGoogleWatchChannels(callbackUrl);
       return res.json({ ok: true, ...result });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown calendar watch renewal error";
       console.error("[Google Calendar] Watch renewal failed", error);
-      return res.status(500).json({ error: message, timestamp: new Date().toISOString() });
+      return res.status(500).json({ error: "Calendar watch renewal failed.", timestamp: new Date().toISOString() });
     }
   });
 }

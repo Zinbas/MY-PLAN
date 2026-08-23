@@ -212,3 +212,6 @@
 - [x] Add optional, non-gamified course/project context and relevant upcoming-deadline cues inside existing Calendar, To-do, Progress, and Today surfaces without creating a separate study dashboard.
 - [x] Simplify Workspace tools into a calm, concise utility index with clear primary actions and progressive disclosure for connection and import details.
 - [x] Add responsive browser and unit regression coverage for the compact academic context and simplified Workspace tools experience.
+- [x] Remove Account & Calendar and Sync Center shortcuts from administrator-only guidance so those user tools remain exclusively framed under Workspace tools.
+- [x] Audit and harden MY PLAN authentication, authorization, browser data handling, import safety, HTTP security headers, and error disclosure without altering private planning data.
+- [x] Add regression coverage for the security hardening controls and document the verified security boundaries.

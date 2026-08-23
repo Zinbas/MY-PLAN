@@ -15,7 +15,7 @@ function validDate(value: unknown, label: string) { const date = typeof value ==
 function title(value: unknown) { if (typeof value !== "string" || !value.trim() || value.length > 1024) throw new Error("title must be 1–1024 characters."); return value.trim(); }
 function eventId(value: unknown) { if (!Number.isInteger(value) || (value as number) < 1) throw new Error("eventId must be a positive integer."); return value as number; }
 function result(value: unknown) { return { content: [{ type: "text", text: JSON.stringify(value) }] }; }
-function requestToken(request: Request) { const header = request.header("authorization") || ""; if (header.startsWith("Bearer ")) return header.slice(7).trim(); if (header.startsWith("Basic ")) return Buffer.from(header.slice(6), "base64").toString("utf8").split(":")[1] || ""; return ""; }
+export function requestToken(request: Request) { const match = (request.header("authorization") || "").match(/^Bearer\s+(.+)$/i); return match?.[1]?.trim() || ""; }
 
 export function getMcpTools() { return tools; }
 
@@ -42,9 +42,11 @@ export async function handleMcpRequest(userId: number, request: Rpc) {
 
 export function registerMcpRoutes(app: Express) {
   app.post("/api/mcp", async (req: Request, res: Response) => {
-    const token = requestToken(req); if (!token) return res.status(401).json({ error: "MY PLAN Spark credential required" });
+    res.setHeader("Cache-Control", "no-store");
+    const token = requestToken(req); if (!token) { res.setHeader("WWW-Authenticate", "Bearer"); return res.status(401).json({ error: "MY PLAN Spark credential required" }); }
+    if (!req.is("application/json") || !req.body || typeof req.body !== "object" || Array.isArray(req.body)) return res.status(400).json({ error: "MCP requests must use a JSON object." });
     const userId = await getSparkTokenOwner(createHash("sha256").update(token).digest("hex"));
-    if (!userId) return res.status(401).json({ error: "Invalid MY PLAN Spark credential" });
+    if (!userId) { res.setHeader("WWW-Authenticate", "Bearer"); return res.status(401).json({ error: "Invalid MY PLAN Spark credential" }); }
     const response = await handleMcpRequest(userId, req.body as Rpc);
     return response === null ? res.status(202).end() : res.status(200).json(response);
   });
