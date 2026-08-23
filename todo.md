@@ -137,8 +137,8 @@
 - [ ] Prepare and verify the safe Spark connection workflow without changing Google Calendar, OAuth, or private planner data.
 - [ ] Define and implement authenticated Gemini Spark tools that can create, view, update, and remove only the connected user’s MY PLAN events.
 - [ ] Add regression coverage proving Spark event actions require authorization and cannot access another user’s private calendar data.
-- [ ] Complete and browser-verify the separate administrator panel’s privacy-preserving user-management and feature-operations controls.
-- [ ] Add successful-administrator, role-guardrail, and non-administrator denial regression coverage for the expanded administrator controls.
+- [x] Complete and browser-verify the separate administrator panel’s privacy-preserving user-management and feature-operations controls.
+- [x] Add successful-administrator, role-guardrail, and non-administrator denial regression coverage for the expanded administrator controls.
 - [x] Validate the prior review-first schedule importer through an isolated server-side harness with public routine image, PDF, and document samples, confirming editable review candidates and no automatic private calendar/task writes.
 - [ ] Refine schedule imports so users choose post-scan candidates to add, provide a mandatory date, and optionally provide a time before selected private calendar/task writes.
 - [x] Add regression coverage for selected import, required-date validation, optional-time behavior, and per-user private-data isolation.
