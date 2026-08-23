@@ -179,5 +179,6 @@
 - [x] Add Select all and Clear all approval controls for large imported timetable reviews.
 - [x] Diagnose and fix the Add selected action so approved timetable items either import reliably or show a precise blocking validation message.
 - [x] Allow users to enter and correct weekly routine Starts on and Repeats until dates directly within the timetable review list.
+- [x] Add a bulk action that applies the same Starts on and Repeats until dates to all selected weekly timetable classes.
 - [ ] Correct duplicate and mismatched weekly timetable candidates reported in the mobile review screen without adding any candidate to the calendar.
 - [ ] Improve the mobile weekly-timetable review so extracted weekday/time/course details are unambiguous and the final confirmation is easy to find.

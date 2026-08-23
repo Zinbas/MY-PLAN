@@ -11,6 +11,7 @@ export type SelectedImportCandidate = {
   course: string;
   notes: string;
   weekdays?: number[];
+  repeatUntil?: string;
 };
 
 function atImportDate(date: string, time: string) {
@@ -30,7 +31,8 @@ export function mapSelectedImportCandidates(selected: SelectedImportCandidate[],
   const blocks: PlannerBlock[] = ready.filter(candidate => candidate.kind === "block" || Boolean(candidate.weekdays?.length)).map((candidate, index) => {
     const weeklyDay = candidate.weekdays?.[0];
     const startAt = firstWeeklyOccurrence(candidate.date, candidate.time, weeklyDay);
-    const repeatUntil = weeklyDay == null || !isValidImportDate(weeklyRepeatUntil || "") ? null : atImportDate(weeklyRepeatUntil!, "23:59");
+    const candidateRepeatUntil = candidate.repeatUntil || weeklyRepeatUntil;
+    const repeatUntil = weeklyDay == null || !isValidImportDate(candidateRepeatUntil || "") ? null : atImportDate(candidateRepeatUntil!, "23:59");
     return { id: `import-block-${timestamp}-${index}`, title: candidate.title, startAt, endAt: new Date(startAt.getTime() + candidate.durationMinutes * 60_000), source: "planner", priority: "normal", repeat: weeklyDay == null ? "none" as RepeatRule : "weekly" as RepeatRule, repeatUntil, completed: false, checklist: [] };
   });
   const events: PersonalEvent[] = ready.filter(candidate => candidate.kind === "event" && !candidate.weekdays?.length).map((candidate, index) => {
