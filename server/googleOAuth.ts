@@ -101,3 +101,11 @@ export const googleActivationChecklist = [
   "Create a Web application OAuth client and add the application callback URL.",
   "Set GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, and GOOGLE_OAUTH_REDIRECT_URI in the project settings.",
 ] as const;
+
+export function googleOAuthSetupPendingResponse() {
+  return {
+    code: "GOOGLE_OAUTH_NOT_CONFIGURED",
+    message: "Google Calendar activation requires the app owner's Google OAuth credentials.",
+    checklist: googleActivationChecklist,
+  } as const;
+}

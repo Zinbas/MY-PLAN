@@ -196,8 +196,8 @@
 - [x] Add per-workspace notification preferences, read state, clear controls, and clear next-step actions without inventing notifications.
 - [x] Add regression coverage for notification generation, privacy scoping, read state, and empty-state behavior.
 - [x] Audit and repair the MY PLAN sign-in flow so supported authentication states never render a blank application screen.
-- [ ] Audit and repair Google Calendar OAuth readiness, connection redirects, and user-facing setup feedback without exposing credentials.
-- [ ] Add isolated regression coverage for authentication failure states, Google readiness, and connection-route safeguards.
+- [x] Audit and repair Google Calendar OAuth readiness, connection redirects, and user-facing setup feedback without exposing credentials.
+- [x] Add isolated regression coverage for authentication failure states, Google readiness, and connection-route safeguards.
 - [x] Verify the MY PLAN Spark connection flow and provide user-safe setup instructions without exposing access tokens.
 - [ ] Upgrade the Spark MCP endpoint from private-token authentication to the OAuth flow required by Gemini custom connected apps.
 - [ ] Support the supplied Gemini Spark redirect URI and secure server-side OAuth client configuration without exposing credentials.

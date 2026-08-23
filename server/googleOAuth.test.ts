@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGoogleAuthorizationUrl, decryptGoogleCredential, encryptGoogleCredential, googleOAuthReadiness, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
+import { buildGoogleAuthorizationUrl, decryptGoogleCredential, encryptGoogleCredential, googleOAuthReadiness, googleOAuthSetupPendingResponse, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
 
 describe("Google OAuth preparation", () => {
   it("builds an authorization request with identity and minimal calendar scopes", () => {
@@ -28,6 +28,15 @@ describe("Google OAuth preparation", () => {
       mode: "setup-pending",
       message: "Google Calendar setup is pending the owner’s OAuth credentials. You can keep planning locally in MY PLAN.",
     });
+  });
+
+  it("returns a safe retry-later payload for every credential-pending Google route", () => {
+    const payload = googleOAuthSetupPendingResponse();
+    expect(payload.code).toBe("GOOGLE_OAUTH_NOT_CONFIGURED");
+    expect(payload.message).toBe("Google Calendar activation requires the app owner's Google OAuth credentials.");
+    expect(payload.checklist).toHaveLength(5);
+    expect(JSON.stringify(payload)).not.toContain("client-secret");
+    expect(JSON.stringify(payload)).not.toContain("refresh-token");
   });
 
   it("hashes OAuth state and encrypts stored credentials without leaving plaintext in the payload", () => {

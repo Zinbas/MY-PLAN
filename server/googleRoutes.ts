@@ -3,7 +3,7 @@
  * credentials are absent; once configured, the authorization route begins Google consent.
  */
 import type { Express, Request, Response } from "express";
-import { buildGoogleAuthorizationUrl, createConnectionState, encryptGoogleCredential, exchangeGoogleAuthorizationCode, getGoogleOAuthConfig, getGoogleProfile, googleActivationChecklist, googleOAuthReadiness, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
+import { buildGoogleAuthorizationUrl, createConnectionState, encryptGoogleCredential, exchangeGoogleAuthorizationCode, getGoogleOAuthConfig, getGoogleProfile, googleOAuthReadiness, googleOAuthSetupPendingResponse, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
 import { consumeGoogleOAuthState, createGoogleOAuthState, getUserByOpenId, upsertGoogleCalendarConnection, upsertUser } from "./db";
 import { sdk } from "./_core/sdk";
 import { COOKIE_NAME } from "@shared/const";
@@ -13,11 +13,7 @@ import { importGoogleCalendarConnection, syncGoogleLinkedCalendar } from "./cale
 import { renewExpiringGoogleWatchChannels } from "./calendarSync";
 
 function activationResponse(res: Response) {
-  return res.status(503).json({
-    code: "GOOGLE_OAUTH_NOT_CONFIGURED",
-    message: "Google Calendar activation requires the app owner's Google OAuth credentials.",
-    checklist: googleActivationChecklist,
-  });
+  return res.status(503).json(googleOAuthSetupPendingResponse());
 }
 
 export function registerGoogleCalendarRoutes(app: Express) {
