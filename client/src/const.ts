@@ -27,9 +27,8 @@ export const startLogin = () => {
   url.searchParams.set("state", state);
   url.searchParams.set("type", "signIn");
 
-  // Embedded previews and some mobile in-app browsers can render the external
-  // authorization portal as an empty surface. A user-initiated new tab keeps
-  // the provider page visible; the fallback preserves standard browser flow.
-  const opened = window.open(url.toString(), "_blank", "noopener,noreferrer");
-  if (!opened) window.location.href = url.toString();
+  // Keep the full authorization journey in the current visible tab. Popup
+  // windows are commonly blocked or rendered as an empty surface by embedded
+  // and mobile browsers, leaving users unable to return to MY PLAN.
+  window.location.assign(url.toString());
 };

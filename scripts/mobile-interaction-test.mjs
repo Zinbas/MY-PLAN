@@ -67,7 +67,7 @@ await assert('Mobile accounts navigation renders a clear account state', `docume
 await assert('Sidebar closes after mobile navigation selection', `!document.querySelector('.ongoing-sidebar').classList.contains('is-open')`);
 await evaluate(`document.querySelector('.mobile-menu').click(); true`);
 await sleep(100);
-await evaluate(`document.querySelector('[aria-label="Return to calendar home"]').click(); true`);
+await evaluate(`document.querySelector('[aria-label="Return to MY PLAN home"]').click(); true`);
 await sleep(100);
 await assert('MY PLAN brand returns to calendar home and closes the sidebar', `document.body.innerText.includes('Every month ahead.') && !document.querySelector('.ongoing-sidebar').classList.contains('is-open')`);
 await evaluate(`document.querySelector('.mobile-menu').click(); true`);

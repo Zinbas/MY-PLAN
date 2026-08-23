@@ -195,3 +195,14 @@
 - [x] Add a private in-app Notification Center that surfaces actionable MY PLAN reminders without device-permission dependence.
 - [x] Add per-workspace notification preferences, read state, clear controls, and clear next-step actions without inventing notifications.
 - [x] Add regression coverage for notification generation, privacy scoping, read state, and empty-state behavior.
+- [ ] Audit and repair the MY PLAN sign-in flow so supported authentication states never render a blank application screen.
+- [ ] Audit and repair Google Calendar OAuth readiness, connection redirects, and user-facing setup feedback without exposing credentials.
+- [ ] Add isolated regression coverage for authentication failure states, Google readiness, and connection-route safeguards.
+- [x] Verify the MY PLAN Spark connection flow and provide user-safe setup instructions without exposing access tokens.
+- [ ] Upgrade the Spark MCP endpoint from private-token authentication to the OAuth flow required by Gemini custom connected apps.
+- [ ] Support the supplied Gemini Spark redirect URI and secure server-side OAuth client configuration without exposing credentials.
+- [ ] Add standards-based OAuth discovery, authorization, token exchange, and MCP access regression coverage for Spark.
+- [x] Remove user-facing “Academic Calendar” wording and retain MY PLAN as the sole visible product brand.
+- [x] Use the user-supplied note-mark image as the MY PLAN app logo across branded application surfaces.
+- [x] Add a concise MY PLAN loading screen and branded loading states for slower workspace and connection views.
+- [x] Add gentle, reduced-motion-aware MY PLAN loading animations around the supplied logo.
