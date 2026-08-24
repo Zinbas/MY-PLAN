@@ -1,6 +1,6 @@
-import { ArrowRight, CirclePlus, RefreshCw, ShieldCheck, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, BellRing, CirclePlus, RefreshCw, ShieldCheck, Sparkles, Upload } from "lucide-react";
 
-type ToolSection = "accounts" | "sync" | "import" | "spark";
+type ToolSection = "accounts" | "sync" | "import" | "spark" | "reminders";
 
 export default function WorkspaceTools({ onOpen }: { onOpen: (section: ToolSection) => void }) {
   return <section className="workspace-card tools-workspace">
@@ -11,7 +11,8 @@ export default function WorkspaceTools({ onOpen }: { onOpen: (section: ToolSecti
       <button className="tool-card is-primary" onClick={() => onOpen("import")}><Upload size={20} /><span><strong>Import a schedule</strong><small>Turn a PDF, image, document, spreadsheet, CSV, or ICS file into private review suggestions.</small></span><ArrowRight size={16} /></button>
       <button className="tool-card" onClick={() => onOpen("accounts")}><CirclePlus size={20} /><span><strong>Account & calendar</strong><small>Sign in, connect Google when ready, and choose the calendars that belong to you.</small></span><ArrowRight size={16} /></button>
     </div>
-    <details className="tools-more"><summary>More workspace utilities <span>Sync and Gemini Spark</span></summary><div>
+    <details className="tools-more"><summary>More workspace utilities <span>Reminders, Sync and Gemini Spark</span></summary><div>
+      <button className="tool-card" onClick={() => onOpen("reminders")}><BellRing size={18} /><span><strong>Device reminders</strong><small>Choose timing and enable private MY PLAN notifications on your devices.</small></span><ArrowRight size={15} /></button>
       <button className="tool-card" onClick={() => onOpen("sync")}><RefreshCw size={18} /><span><strong>Sync center</strong><small>Review connection health and reminder delivery.</small></span><ArrowRight size={15} /></button>
       <button className="tool-card" onClick={() => onOpen("spark")}><Sparkles size={18} /><span><strong>Gemini Spark</strong><small>Review the separate, secure connection setup.</small></span><ArrowRight size={15} /></button>
     </div></details>

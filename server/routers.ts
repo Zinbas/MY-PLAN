@@ -5,12 +5,13 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
-import { getAdminOverview, listAdminUserDirectory, listOwnedLinkedCalendars, listUserCalendarConnections, listUserSyncedEvents, setManagedUserRole } from "./db";
+import { cancelOwnedPushReminderDeliveries, getAdminOverview, getPushReminderPreferences, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeOwnedPushSubscription, setManagedUserRole, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule } from "./scheduleImport";
 import { createHash, randomBytes } from "node:crypto";
 import { listSparkEvents, replaceSparkAccessToken } from "./db";
+import { createDeliveryKey, encryptPushSubscription, hashPushEndpoint, isAllowedReminderLeadMinutes, isValidQuietHour, normalizePushSubscription, pushReadiness } from "./push";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -80,6 +81,68 @@ export const appRouter = router({
       mimeType: z.string().min(1).max(160),
       contentBase64: z.string().min(1).max(14_000_000),
     })).mutation(({ ctx, input }) => extractUploadedSchedule(ctx.user.id, input)),
+  }),
+  push: router({
+    readiness: publicProcedure.query(() => pushReadiness()),
+    preferences: protectedProcedure.query(({ ctx }) => getPushReminderPreferences(ctx.user.id)),
+    updatePreferences: protectedProcedure.input(z.object({
+      defaultLeadMinutes: z.number().int(),
+      quietHoursStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+      quietHoursEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+      timeZone: z.string().min(1).max(128).nullable(),
+    })).mutation(async ({ ctx, input }) => {
+      if (!isAllowedReminderLeadMinutes(input.defaultLeadMinutes) || !isValidQuietHour(input.quietHoursStart) || !isValidQuietHour(input.quietHoursEnd)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid reminder preferences." });
+      }
+      const existing = await getPushReminderPreferences(ctx.user.id);
+      return upsertPushReminderPreferences(ctx.user.id, { ...input, enabled: existing.enabled });
+    }),
+    subscriptions: protectedProcedure.query(({ ctx }) => listOwnedPushSubscriptions(ctx.user.id)),
+    subscribe: protectedProcedure.input(z.object({
+      endpoint: z.string().url().max(2_000),
+      expirationTime: z.number().finite().positive().nullable(),
+      keys: z.object({ p256dh: z.string().min(16).max(512), auth: z.string().min(16).max(512) }),
+      userAgent: z.string().max(512).nullable(),
+    })).mutation(async ({ ctx, input }) => {
+      if (!pushReadiness().ready) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "MY PLAN device reminders are not configured yet." });
+      const subscription = normalizePushSubscription(input);
+      await upsertPushSubscription({
+        userId: ctx.user.id,
+        endpointHash: hashPushEndpoint(subscription.endpoint),
+        encryptedSubscription: encryptPushSubscription(subscription),
+        userAgent: input.userAgent,
+        expiresAt: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+      });
+      const preferences = await getPushReminderPreferences(ctx.user.id);
+      await upsertPushReminderPreferences(ctx.user.id, { ...preferences, enabled: true });
+      return { enabled: true } as const;
+    }),
+    unsubscribe: protectedProcedure.input(z.object({ subscriptionId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await revokeOwnedPushSubscription(ctx.user.id, input.subscriptionId);
+      return { success: true } as const;
+    }),
+    disableAll: protectedProcedure.mutation(async ({ ctx }) => {
+      await revokeAllOwnedPushSubscriptions(ctx.user.id);
+      const preferences = await getPushReminderPreferences(ctx.user.id);
+      await upsertPushReminderPreferences(ctx.user.id, { ...preferences, enabled: false });
+      return { success: true } as const;
+    }),
+    scheduleDelivery: protectedProcedure.input(z.object({
+      sourceKind: z.enum(["task", "event", "block"]),
+      sourceId: z.string().min(1).max(255),
+      title: z.string().min(1).max(1024),
+      body: z.string().min(1).max(512),
+      targetSection: z.enum(["calendar", "todo"]),
+      scheduledAt: z.date(),
+    })).mutation(async ({ ctx, input }) => {
+      if (input.scheduledAt <= new Date()) throw new TRPCError({ code: "BAD_REQUEST", message: "A device reminder must be scheduled in the future." });
+      await upsertPushReminderDelivery({ ...input, userId: ctx.user.id, deliveryKey: createDeliveryKey(ctx.user.id, input.sourceKind, input.sourceId, input.scheduledAt) });
+      return { success: true } as const;
+    }),
+    cancelDeliveries: protectedProcedure.input(z.object({ deliveryKeys: z.array(z.string().regex(/^[a-f0-9]{64}$/)).max(100) })).mutation(async ({ ctx, input }) => {
+      await cancelOwnedPushReminderDeliveries(ctx.user.id, input.deliveryKeys);
+      return { success: true } as const;
+    }),
   }),
 
   // TODO: add feature routers here, e.g.

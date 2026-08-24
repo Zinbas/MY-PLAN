@@ -1,6 +1,6 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
+import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
 import { calendarsForConnections, connectionsForUser, visibleEventsForCalendars } from "./calendarOwnership";
 
@@ -355,4 +355,97 @@ export async function listExpiringWatchChannels(before: Date) {
   if (!db) throw new Error("Database unavailable");
   const rows = await db.select().from(calendarWatchChannels);
   return rows.filter(channel => channel.expiresAt <= before);
+}
+
+export type PushPreferenceInput = {
+  enabled: boolean;
+  defaultLeadMinutes: number;
+  quietHoursStart: string | null;
+  quietHoursEnd: string | null;
+  timeZone: string | null;
+};
+
+export const defaultPushReminderPreferences: PushPreferenceInput = {
+  enabled: false,
+  defaultLeadMinutes: 10,
+  quietHoursStart: null,
+  quietHoursEnd: null,
+  timeZone: null,
+};
+
+export async function getPushReminderPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const record = (await db.select().from(pushReminderPreferences).where(eq(pushReminderPreferences.userId, userId)).limit(1))[0];
+  return record ?? { id: null, userId, ...defaultPushReminderPreferences };
+}
+
+export async function upsertPushReminderPreferences(userId: number, input: PushPreferenceInput) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(pushReminderPreferences).values({ userId, ...input }).onDuplicateKeyUpdate({ set: input });
+  return getPushReminderPreferences(userId);
+}
+
+export async function upsertPushSubscription(input: {
+  userId: number;
+  endpointHash: string;
+  encryptedSubscription: string;
+  userAgent: string | null;
+  expiresAt: Date | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(pushSubscriptions).values({ ...input, status: "active", lastError: null }).onDuplicateKeyUpdate({
+    set: { userId: input.userId, encryptedSubscription: input.encryptedSubscription, userAgent: input.userAgent, expiresAt: input.expiresAt, status: "active", lastError: null },
+  });
+  return (await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpointHash, input.endpointHash)).limit(1))[0];
+}
+
+export async function listOwnedPushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select({ id: pushSubscriptions.id, status: pushSubscriptions.status, userAgent: pushSubscriptions.userAgent, expiresAt: pushSubscriptions.expiresAt, createdAt: pushSubscriptions.createdAt, updatedAt: pushSubscriptions.updatedAt })
+    .from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+}
+
+export async function listActivePushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select().from(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.status, "active")));
+}
+
+export async function revokeOwnedPushSubscription(userId: number, subscriptionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushSubscriptions).set({ status: "revoked", encryptedSubscription: "", lastError: null }).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.id, subscriptionId)));
+}
+
+export async function revokeAllOwnedPushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushSubscriptions).set({ status: "revoked", encryptedSubscription: "", lastError: null }).where(eq(pushSubscriptions.userId, userId));
+}
+
+export async function upsertPushReminderDelivery(input: {
+  userId: number;
+  deliveryKey: string;
+  sourceKind: "task" | "event" | "block";
+  sourceId: string;
+  title: string;
+  body: string;
+  targetSection: "calendar" | "todo";
+  scheduledAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(pushReminderDeliveries).values({ ...input }).onDuplicateKeyUpdate({
+    set: { sourceKind: input.sourceKind, sourceId: input.sourceId, title: input.title, body: input.body, targetSection: input.targetSection, scheduledAt: input.scheduledAt, state: "pending", claimToken: null, claimedAt: null, sentAt: null },
+  });
+}
+
+export async function cancelOwnedPushReminderDeliveries(userId: number, deliveryKeys: string[]) {
+  const db = await getDb();
+  if (!db || !deliveryKeys.length) return;
+  await db.update(pushReminderDeliveries).set({ state: "cancelled" }).where(and(eq(pushReminderDeliveries.userId, userId), inArray(pushReminderDeliveries.deliveryKey, deliveryKeys)));
 }

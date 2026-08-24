@@ -134,7 +134,60 @@ export const sparkEvents = mysqlTable("sparkEvents", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("sparkEvents_user_start_idx").on(table.userId, table.startAt)]);
 
+/** User-controlled rules for MY PLAN's native, opt-in off-app reminders. */
+export const pushReminderPreferences = mysqlTable("pushReminderPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  enabled: boolean("enabled").notNull().default(false),
+  defaultLeadMinutes: int("defaultLeadMinutes").notNull().default(10),
+  quietHoursStart: varchar("quietHoursStart", { length: 5 }),
+  quietHoursEnd: varchar("quietHoursEnd", { length: 5 }),
+  timeZone: varchar("timeZone", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/** A per-device push subscription. Endpoint and encryption keys are encrypted server-side. */
+export const pushSubscriptions = mysqlTable("pushSubscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpointHash: varchar("endpointHash", { length: 128 }).notNull().unique(),
+  encryptedSubscription: text("encryptedSubscription").notNull(),
+  userAgent: varchar("userAgent", { length: 512 }),
+  expiresAt: timestamp("expiresAt"),
+  status: mysqlEnum("status", ["active", "revoked", "expired"]).notNull().default("active"),
+  lastError: varchar("lastError", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("pushSubscriptions_user_status_idx").on(table.userId, table.status)]);
+
+/** Minimal, user-approved reminder payloads claimed and delivered by the background dispatcher. */
+export const pushReminderDeliveries = mysqlTable("pushReminderDeliveries", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  deliveryKey: varchar("deliveryKey", { length: 128 }).notNull().unique(),
+  sourceKind: mysqlEnum("sourceKind", ["task", "event", "block"]).notNull(),
+  sourceId: varchar("sourceId", { length: 255 }).notNull(),
+  title: varchar("title", { length: 1024 }).notNull(),
+  body: varchar("body", { length: 512 }).notNull(),
+  targetSection: mysqlEnum("targetSection", ["calendar", "todo"]).notNull(),
+  scheduledAt: timestamp("scheduledAt").notNull(),
+  state: mysqlEnum("state", ["pending", "claimed", "sent", "skipped", "cancelled"]).notNull().default("pending"),
+  attemptCount: int("attemptCount").notNull().default(0),
+  claimToken: varchar("claimToken", { length: 128 }),
+  claimedAt: timestamp("claimedAt"),
+  sentAt: timestamp("sentAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  index("pushReminderDeliveries_due_idx").on(table.state, table.scheduledAt),
+  index("pushReminderDeliveries_user_idx").on(table.userId),
+]);
+
 export type CalendarConnection = typeof calendarConnections.$inferSelect;
 export type LinkedCalendar = typeof linkedCalendars.$inferSelect;
 export type SyncedEvent = typeof syncedEvents.$inferSelect;
 export type SparkEvent = typeof sparkEvents.$inferSelect;
+export type PushReminderPreference = typeof pushReminderPreferences.$inferSelect;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type PushReminderDelivery = typeof pushReminderDeliveries.$inferSelect;
