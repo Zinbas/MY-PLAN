@@ -227,4 +227,4 @@
 - [ ] Add a branded MY PLAN service-worker notification experience that safely opens the relevant private planning context on user interaction.
 - [ ] Add secure scheduled push-delivery handling with idempotent due-reminder claiming, expired-subscription cleanup, and no cross-user data exposure.
 - [ ] Validate native web-push permission, privacy boundaries, background delivery preparation, and reminder lifecycle behavior before activation.
-- [ ] Create a private, MY PLAN-only GitHub repository containing the current source code and no secrets or service credentials.
+- [x] Create a private, MY PLAN-only GitHub repository containing the current source code and no secrets or service credentials.
