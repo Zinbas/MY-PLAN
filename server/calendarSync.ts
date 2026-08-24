@@ -56,7 +56,11 @@ export async function setGoogleCalendarSelection(userId: number, linkedCalendarI
     // The user's selection has already been persisted. A refresh/watch failure
     // must not make the picker falsely claim that the choice was discarded.
     const lastError = error instanceof Error ? error.message : "Google sync needs attention";
-    await db.setCalendarSyncState(linkedCalendarId, { syncStatus: "attention", lastError });
+    try {
+      await db.setCalendarSyncState(linkedCalendarId, { syncStatus: "attention", lastError });
+    } catch {
+      // Status telemetry must never override the durable user selection.
+    }
     return { ...calendar, syncStatus: "attention" as const };
   }
 }

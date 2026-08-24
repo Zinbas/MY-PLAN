@@ -7,6 +7,10 @@ describe("calendar selection feedback", () => {
     expect(calendarSelectionSaveMessage({ isVisible: true, syncStatus: "attention" })).toContain("sync needs attention");
   });
 
+  it("does not describe an attention result as a rolled-back choice", () => {
+    expect(calendarSelectionSaveMessage({ isVisible: true, syncStatus: "attention" })).not.toContain("could not save");
+  });
+
   it("keeps the regular confirmation for idle and healthy selection changes", () => {
     expect(calendarSelectionSaveMessage({ isVisible: false, syncStatus: "idle" })).toBe("Calendar selection saved. MY PLAN will only show and sync the calendars you selected.");
     expect(calendarSelectionSaveMessage({ isVisible: true, syncStatus: "healthy" })).toBe("Calendar selection saved. MY PLAN will only show and sync the calendars you selected.");
