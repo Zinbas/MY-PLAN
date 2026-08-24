@@ -5,9 +5,11 @@ describe("HTTP security boundaries", () => {
   it("allows same-origin and server-to-server writes while rejecting a mismatched browser origin", () => {
     expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "myplan.example" , origin: "https://myplan.example" } } as any)).toBe(true);
     expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "internal.service", "x-forwarded-host": "myplan.example", origin: "https://myplan.example" } } as any)).toBe(true);
+    expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "internal.service", origin: "https://myplan.example" } } as any, "https://myplan.example/api/google/callback")).toBe(true);
     expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "myplan.example" } } as any)).toBe(true);
     expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "myplan.example", origin: "https://attacker.example" } } as any)).toBe(false);
     expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "internal.service", "x-forwarded-host": "myplan.example", origin: "https://attacker.example" } } as any)).toBe(false);
+    expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "internal.service", origin: "https://attacker.example" } } as any, "https://myplan.example/api/google/callback")).toBe(false);
     expect(isSameOriginUnsafeRequest({ method: "GET", headers: { host: "myplan.example", origin: "https://attacker.example" } } as any)).toBe(true);
   });
 

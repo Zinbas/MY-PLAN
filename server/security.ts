@@ -7,7 +7,16 @@ function header(request: RequestLike, name: string) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function isSameOriginUnsafeRequest(request: RequestLike) {
+function configuredPublicHost(redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI) {
+  if (!redirectUri) return undefined;
+  try {
+    return new URL(redirectUri).host.toLowerCase();
+  } catch {
+    return undefined;
+  }
+}
+
+export function isSameOriginUnsafeRequest(request: RequestLike, redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method.toUpperCase())) return true;
   const origin = header(request, "origin");
   if (!origin) return true;
@@ -17,7 +26,8 @@ export function isSameOriginUnsafeRequest(request: RequestLike) {
   const host = header(request, "x-forwarded-host")?.split(",")[0]?.trim() || header(request, "host");
   if (!host) return false;
   try {
-    return new URL(origin).host.toLowerCase() === host.toLowerCase();
+    const originHost = new URL(origin).host.toLowerCase();
+    return originHost === host.toLowerCase() || originHost === configuredPublicHost(redirectUri);
   } catch {
     return false;
   }
