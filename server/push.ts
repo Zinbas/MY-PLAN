@@ -79,6 +79,30 @@ export function isWithinQuietHours(now: Date, timeZone: string | null, start: st
   return start < end ? current >= start && current < end : current >= start || current < end;
 }
 
+/** Return the earliest practical post-quiet delivery time without requesting browser or user data. */
+export function nextPushDeliveryAfterQuietHours(now: Date, timeZone: string | null, start: string | null, end: string | null) {
+  if (!timeZone || !isWithinQuietHours(now, timeZone, start, end) || !end) return now;
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(now);
+  const hour = Number(parts.find(part => part.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find(part => part.type === "minute")?.value ?? "0");
+  const currentMinutes = hour * 60 + minute;
+  const [endHour, endMinute] = end.split(":").map(Number);
+  const endMinutes = endHour * 60 + endMinute;
+  const minutesUntilEnd = (endMinutes - currentMinutes + 1_440) % 1_440 || 1_440;
+  return new Date(now.getTime() + minutesUntilEnd * 60_000);
+}
+
+export function pushDeliveryStatusCode(error: unknown) {
+  if (!error || typeof error !== "object" || !("statusCode" in error)) return null;
+  const statusCode = (error as { statusCode?: unknown }).statusCode;
+  return typeof statusCode === "number" && Number.isInteger(statusCode) ? statusCode : null;
+}
+
+export function isExpiredPushSubscriptionError(error: unknown) {
+  const statusCode = pushDeliveryStatusCode(error);
+  return statusCode === 404 || statusCode === 410;
+}
+
 export async function sendPushNotification(subscription: BrowserPushSubscription, payload: { title: string; body: string; route: string; tag: string }, config = getPushConfig()) {
   if (!isPushConfigured(config)) throw new Error("Native web push is not configured");
   webpush.setVapidDetails(config.subject!, config.publicKey!, config.privateKey!);

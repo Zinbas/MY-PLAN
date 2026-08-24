@@ -36,7 +36,7 @@ Each notification will use the MY PLAN name, the user’s approved item title, c
 
 Native delivery requires an HTTPS production origin, a service worker, a secure VAPID public/private key pair, and a deployed scheduled callback. The VAPID private key is server-only; the public key is returned to authenticated clients only for subscription creation. No key is embedded in source control, test fixtures, local storage, or push payloads.
 
-The current implementation will expose a clear **setup pending** state until VAPID keys are supplied securely. Only then can a user subscribe a device, and only after the deployed dispatcher is enabled can reminders be delivered while MY PLAN is closed.
+The current implementation exposes a clear **setup pending** state until VAPID keys are supplied securely. A cron-only dispatcher endpoint is prepared at `/api/scheduled/dispatch-push-reminders`; it returns a safe no-op until VAPID configuration is valid. Only after a checkpoint containing that endpoint has been deployed, the three VAPID values have been added through secure project settings, and the project owner creates the one-minute background job may MY PLAN deliver reminders while closed. The background job must never be created from a development preview or replaced with an in-process timer.
 
 ## Permission and reliability policy
 

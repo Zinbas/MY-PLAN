@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
@@ -448,4 +448,78 @@ export async function cancelOwnedPushReminderDeliveries(userId: number, delivery
   const db = await getDb();
   if (!db || !deliveryKeys.length) return;
   await db.update(pushReminderDeliveries).set({ state: "cancelled" }).where(and(eq(pushReminderDeliveries.userId, userId), inArray(pushReminderDeliveries.deliveryKey, deliveryKeys)));
+}
+
+export type ClaimedPushReminderDelivery = typeof pushReminderDeliveries.$inferSelect;
+
+/** Requeue claims left behind by an interrupted dispatcher without trusting caller-controlled data. */
+export async function requeueStalePushReminderDeliveryClaims(staleBefore: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushReminderDeliveries).set({ state: "pending", claimToken: null, claimedAt: null })
+    .where(and(eq(pushReminderDeliveries.state, "claimed"), lt(pushReminderDeliveries.claimedAt, staleBefore)));
+}
+
+/** Discard deliveries that pre-date activation or an outage window instead of sending stale reminders. */
+export async function skipExpiredPendingPushReminderDeliveries(expiredBefore: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushReminderDeliveries).set({ state: "skipped", claimToken: null, claimedAt: null })
+    .where(and(eq(pushReminderDeliveries.state, "pending"), lt(pushReminderDeliveries.scheduledAt, expiredBefore)));
+}
+
+/**
+ * Atomically claim a bounded batch of due records. A conditional state update makes duplicate
+ * Heartbeat deliveries harmless when two calls overlap.
+ */
+export async function claimDuePushReminderDeliveries(now: Date, limit: number, claimToken: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const due = await db.select().from(pushReminderDeliveries)
+    .where(and(eq(pushReminderDeliveries.state, "pending"), lte(pushReminderDeliveries.scheduledAt, now)))
+    .orderBy(asc(pushReminderDeliveries.scheduledAt)).limit(limit);
+  const claimed: ClaimedPushReminderDelivery[] = [];
+  for (const delivery of due) {
+    await db.update(pushReminderDeliveries).set({
+      state: "claimed",
+      claimToken,
+      claimedAt: now,
+      attemptCount: delivery.attemptCount + 1,
+    }).where(and(eq(pushReminderDeliveries.id, delivery.id), eq(pushReminderDeliveries.state, "pending")));
+    const current = (await db.select().from(pushReminderDeliveries).where(and(
+      eq(pushReminderDeliveries.id, delivery.id),
+      eq(pushReminderDeliveries.state, "claimed"),
+      eq(pushReminderDeliveries.claimToken, claimToken),
+    )).limit(1))[0];
+    if (current) claimed.push(current);
+  }
+  return claimed;
+}
+
+export async function markPushReminderDeliverySent(deliveryId: number, claimToken: string, sentAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushReminderDeliveries).set({ state: "sent", sentAt, claimToken: null, claimedAt: null })
+    .where(and(eq(pushReminderDeliveries.id, deliveryId), eq(pushReminderDeliveries.state, "claimed"), eq(pushReminderDeliveries.claimToken, claimToken)));
+}
+
+export async function deferClaimedPushReminderDelivery(deliveryId: number, claimToken: string, scheduledAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushReminderDeliveries).set({ state: "pending", scheduledAt, claimToken: null, claimedAt: null })
+    .where(and(eq(pushReminderDeliveries.id, deliveryId), eq(pushReminderDeliveries.state, "claimed"), eq(pushReminderDeliveries.claimToken, claimToken)));
+}
+
+export async function skipClaimedPushReminderDelivery(deliveryId: number, claimToken: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushReminderDeliveries).set({ state: "skipped", claimToken: null, claimedAt: null })
+    .where(and(eq(pushReminderDeliveries.id, deliveryId), eq(pushReminderDeliveries.state, "claimed"), eq(pushReminderDeliveries.claimToken, claimToken)));
+}
+
+export async function expirePushSubscription(subscriptionId: number, reason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(pushSubscriptions).set({ status: "expired", encryptedSubscription: "", lastError: reason.slice(0, 255) })
+    .where(and(eq(pushSubscriptions.id, subscriptionId), eq(pushSubscriptions.status, "active")));
 }

@@ -5,7 +5,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
-import { cancelOwnedPushReminderDeliveries, getAdminOverview, getPushReminderPreferences, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeOwnedPushSubscription, setManagedUserRole, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
+import { cancelOwnedPushReminderDeliveries, getAdminOverview, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeOwnedPushSubscription, setManagedUserRole, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule, scheduleImportFailureMessage } from "./scheduleImport";
@@ -142,6 +142,11 @@ export const appRouter = router({
       scheduledAt: z.date(),
     })).mutation(async ({ ctx, input }) => {
       if (input.scheduledAt <= new Date()) throw new TRPCError({ code: "BAD_REQUEST", message: "A device reminder must be scheduled in the future." });
+      const preferences = await getPushReminderPreferences(ctx.user.id);
+      const subscriptions = await listActivePushSubscriptions(ctx.user.id);
+      if (!preferences.enabled || !subscriptions.some(subscription => !subscription.expiresAt || subscription.expiresAt > new Date())) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Enable MY PLAN device reminders on a current browser before adding an off-app reminder." });
+      }
       await upsertPushReminderDelivery({ ...input, userId: ctx.user.id, deliveryKey: createDeliveryKey(ctx.user.id, input.sourceKind, input.sourceId, input.scheduledAt) });
       return { success: true } as const;
     }),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDeliveryKey, isWithinQuietHours, isValidQuietHour, normalizePushSubscription, pushReadiness } from "./push";
+import { createDeliveryKey, isExpiredPushSubscriptionError, isWithinQuietHours, isValidQuietHour, nextPushDeliveryAfterQuietHours, normalizePushSubscription, pushReadiness } from "./push";
 
 describe("native web-push setup", () => {
   it("returns only the public VAPID key when valid server configuration is present", () => {
@@ -21,5 +21,11 @@ describe("native web-push setup", () => {
     expect(isValidQuietHour("25:30")).toBe(false);
     expect(isWithinQuietHours(new Date("2026-08-24T18:45:00.000Z"), "Asia/Kolkata", "23:00", "07:00")).toBe(true);
     expect(isWithinQuietHours(new Date("2026-08-24T06:30:00.000Z"), "Asia/Kolkata", "23:00", "07:00")).toBe(false);
+  });
+
+  it("defers quiet-time deliveries to the local quiet-hours end and recognizes invalid-device responses", () => {
+    expect(nextPushDeliveryAfterQuietHours(new Date("2026-08-24T18:45:00.000Z"), "Asia/Kolkata", "23:00", "07:00").toISOString()).toBe("2026-08-25T01:30:00.000Z");
+    expect(isExpiredPushSubscriptionError({ statusCode: 410 })).toBe(true);
+    expect(isExpiredPushSubscriptionError({ statusCode: 503 })).toBe(false);
   });
 });
