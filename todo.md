@@ -249,7 +249,7 @@
 - [x] Validate the securely configured VAPID readiness endpoint, publish the activation code, and create the cron-only one-minute MY PLAN reminder dispatcher without sending unapproved reminders.
 - [ ] Remove the unexpected production-only “Made with Manus” overlay so MY PLAN remains the sole product-facing brand.
 - [x] Correct the reported connected-calendar selection-card visual misalignment while preserving all existing selections.
-- [ ] Reproduce one user-authorized connected-calendar selection toggle and restore its exact original state without modifying events.
+- [x] Reproduce one user-authorized connected-calendar selection toggle and restore its exact original state without modifying events.
 - [x] Make connected-calendar selection acknowledge immediately, with optimistic success state and safe rollback when persistence fails.
 - [ ] Diagnose and repair the reported live MY PLAN sign-in failure before resuming the authorized calendar-selection test.
-- [ ] Preserve successful calendar selection changes and show accurate feedback when subsequent Google sync setup needs attention.
+- [x] Preserve successful calendar selection changes and show accurate feedback when subsequent Google sync setup needs attention.
