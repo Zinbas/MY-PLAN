@@ -93,7 +93,7 @@
 - [x] Add browser-level regression coverage for administrator-only navigation visibility alongside the existing non-administrator overview denial test.
 - [x] Open Accounts as the signed-in administrator and verify the administrator status/badge and protected overview render with live data.
 - [x] Assign the confirmed user-provided Gmail to the administrator role after its MY PLAN account exists.
-- [ ] Complete the secure Google OAuth client configuration and activate the existing Google account-connection flow.
+- [x] Complete the secure Google OAuth client configuration and activate the existing Google account-connection flow.
 - [ ] Select and configure a free public HTTPS deployment path for MY PLAN before registering the Google OAuth callback URL.
 - [ ] Guide the user step by step through publication, callback registration, secure OAuth secret entry, and live Google Calendar verification before the GitHub export.
 - [x] Add regression coverage for administrator authorization and non-administrator access restrictions.
@@ -228,3 +228,6 @@
 - [ ] Add secure scheduled push-delivery handling with idempotent due-reminder claiming, expired-subscription cleanup, and no cross-user data exposure.
 - [ ] Validate native web-push permission, privacy boundaries, background delivery preparation, and reminder lifecycle behavior before activation.
 - [x] Create a private, MY PLAN-only GitHub repository containing the current source code and no secrets or service credentials.
+- [x] Enter the configured Google Calendar OAuth client credentials through MY PLAN’s secure project settings and validate the protected connection flow.
+- [ ] With the user’s explicit Google consent, run one live MY PLAN Google sign-in and Calendar connection verification without changing any calendar event data.
+- [ ] Verify and document the Google OAuth consent-screen state, required app information, and eligible test-user access before finalizing live account-linking activation.
