@@ -234,3 +234,6 @@
 - [x] Diagnose and repair the reported blank MY PLAN preview after Google OAuth configuration, then verify desktop and mobile rendering.
 - [x] Diagnose and repair the published MY PLAN Google OAuth setup-pending response after secure credential activation.
 - [ ] Redesign the connected Google Calendar selection UI and UX with clear, touch-friendly private-calendar controls, selection feedback, and responsive hierarchy.
+- [x] Redesign MY PLAN sign-in discovery and account entry points so authentication is visibly available, concise, and professional on desktop and mobile.
+- [x] Complete a focused whole-product UX pass covering navigation, sign-in, planning actions, connected tools, feedback states, and compact-phone ergonomics.
+- [x] Research current planner-app user feedback and usability guidance, then document the findings that inform the MY PLAN UX implementation.
