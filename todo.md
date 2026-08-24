@@ -232,4 +232,4 @@
 - [ ] With the user’s explicit Google consent, run one live MY PLAN Google sign-in and Calendar connection verification without changing any calendar event data.
 - [ ] Verify and document the Google OAuth consent-screen state, required app information, and eligible test-user access before finalizing live account-linking activation.
 - [x] Diagnose and repair the reported blank MY PLAN preview after Google OAuth configuration, then verify desktop and mobile rendering.
-- [ ] Diagnose and repair the published MY PLAN Google OAuth setup-pending response after secure credential activation.
+- [x] Diagnose and repair the published MY PLAN Google OAuth setup-pending response after secure credential activation.
