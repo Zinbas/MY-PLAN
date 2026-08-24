@@ -219,7 +219,7 @@
 - [x] Restore production startup compatibility after the Express security upgrade without weakening the current security controls.
 - [x] Add purposeful, responsive animations for primary navigation, workspace changes, calendar actions, panels, cards, and feedback while respecting reduced-motion preferences.
 - [x] Add regression and visual checks for deployment startup and the calibrated animation experience.
-- [ ] Add a slightly more expressive, reduced-motion-aware micro-interaction layer for active navigation, calendar dates, notification feedback, and action completion without increasing visual clutter.
+- [x] Add a slightly more expressive, reduced-motion-aware micro-interaction layer for active navigation, calendar dates, notification feedback, and action completion without increasing visual clutter.
 - [ ] Add user-controlled reminder timing rules and delivery preferences for MY PLAN items while keeping browser push strictly optional.
 - [ ] Prepare Google Calendar reminder delivery so users receive off-app notifications after secure OAuth activation and selected-calendar approval.
 - [x] Add reminder-preference regression coverage and document the secure off-app reminder activation requirements.
