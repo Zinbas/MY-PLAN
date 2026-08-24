@@ -246,3 +246,4 @@
 - [x] Clear cached Google connection and selected-calendar interface data immediately on MY PLAN logout without altering server-side connections or planning data.
 - [x] Replace the floating account chip with a polished first-visit MY PLAN welcome flow that asks users to sign in or continue as a guest, then asks whether they want a tutorial.
 - [ ] Complete and verify the visible native MY PLAN device-reminder opt-in experience while keeping VAPID credentials and durable delivery activation securely gated.
+- [ ] Validate the securely configured VAPID readiness endpoint, publish the activation code, and create the cron-only one-minute MY PLAN reminder dispatcher without sending unapproved reminders.
