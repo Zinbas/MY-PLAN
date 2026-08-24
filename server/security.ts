@@ -11,7 +11,10 @@ export function isSameOriginUnsafeRequest(request: RequestLike) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method.toUpperCase())) return true;
   const origin = header(request, "origin");
   if (!origin) return true;
-  const host = header(request, "host");
+  // Autoscale deployments terminate TLS at a trusted proxy, so `host` can be an
+  // internal service address while the browser sends the public MY PLAN origin.
+  // The proxy-provided public host takes precedence when it is available.
+  const host = header(request, "x-forwarded-host")?.split(",")[0]?.trim() || header(request, "host");
   if (!host) return false;
   try {
     return new URL(origin).host.toLowerCase() === host.toLowerCase();

@@ -251,3 +251,4 @@
 - [x] Correct the reported connected-calendar selection-card visual misalignment while preserving all existing selections.
 - [ ] Reproduce one user-authorized connected-calendar selection toggle and restore its exact original state without modifying events.
 - [x] Make connected-calendar selection acknowledge immediately, with optimistic success state and safe rollback when persistence fails.
+- [ ] Diagnose and repair the reported live MY PLAN sign-in failure before resuming the authorized calendar-selection test.
