@@ -1,8 +1,25 @@
+const defaultRoute = "/?section=calendar";
+
+function safeRoute(value) {
+  if (typeof value !== "string") return defaultRoute;
+  try {
+    const url = new URL(value, self.location.origin);
+    if (url.origin !== self.location.origin) return defaultRoute;
+    const section = url.searchParams.get("section");
+    if (section !== "calendar" && section !== "todo") return defaultRoute;
+    const reminder = url.searchParams.get("reminder");
+    return `/?section=${section}${reminder ? `&reminder=${encodeURIComponent(reminder)}` : ""}`;
+  } catch {
+    return defaultRoute;
+  }
+}
+
 self.addEventListener("push", event => {
-  const payload = event.data ? event.data.json() : {};
-  const title = typeof payload.title === "string" ? payload.title : "MY PLAN reminder";
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch {}
+  const title = typeof payload.title === "string" ? `MY PLAN · ${payload.title}` : "MY PLAN reminder";
   const body = typeof payload.body === "string" ? payload.body : "Something in your plan needs attention.";
-  const route = typeof payload.route === "string" && payload.route.startsWith("/") ? payload.route : "/";
+  const route = safeRoute(payload.route);
   event.waitUntil(self.registration.showNotification(title, {
     body,
     icon: "/manus-storage/my-plan-note-mark_567e5611.jpg",
@@ -16,7 +33,7 @@ self.addEventListener("push", event => {
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const route = event.notification?.data?.route || "/";
+  const route = safeRoute(event.notification?.data?.route);
   event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(clientList => {
     const existing = clientList.find(client => client.url.startsWith(self.location.origin));
     if (existing) return existing.navigate(route).then(() => existing.focus());

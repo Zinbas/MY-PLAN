@@ -224,7 +224,7 @@
 - [ ] Prepare Google Calendar reminder delivery so users receive off-app notifications after secure OAuth activation and selected-calendar approval.
 - [ ] Add reminder-preference regression coverage and document the secure off-app reminder activation requirements.
 - [ ] Build native opt-in MY PLAN web-push subscriptions, per-user reminder timing, quiet hours, and user-controlled disable/retry behavior.
-- [ ] Add a branded MY PLAN service-worker notification experience that safely opens the relevant private planning context on user interaction.
+- [x] Add a branded MY PLAN service-worker notification experience that safely opens the relevant private planning context on user interaction.
 - [ ] Add secure scheduled push-delivery handling with idempotent due-reminder claiming, expired-subscription cleanup, and no cross-user data exposure.
 - [ ] Validate native web-push permission, privacy boundaries, background delivery preparation, and reminder lifecycle behavior before activation.
 - [x] Create a private, MY PLAN-only GitHub repository containing the current source code and no secrets or service credentials.
@@ -245,3 +245,4 @@
 - [x] Validate the repaired image schedule importer with a non-writing review fixture matching the reported JPEG upload path.
 - [x] Clear cached Google connection and selected-calendar interface data immediately on MY PLAN logout without altering server-side connections or planning data.
 - [x] Replace the floating account chip with a polished first-visit MY PLAN welcome flow that asks users to sign in or continue as a guest, then asks whether they want a tutorial.
+- [ ] Complete and verify the visible native MY PLAN device-reminder opt-in experience while keeping VAPID credentials and durable delivery activation securely gated.
