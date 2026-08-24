@@ -1,5 +1,6 @@
 import { startLogin } from "@/const";
 import { safelySetBrowserStorage } from "@/lib/safeBrowserStorage";
+import { shouldBlockAuthPresentation } from "@/lib/authPresentation";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
@@ -29,6 +30,10 @@ export function useAuth(options?: UseAuthOptions) {
   });
 
   const logout = useCallback(async () => {
+    // The signed-out shell must appear as soon as the user deliberately logs
+    // out. Cookie clearing continues in the background; a later invalidation
+    // confirms the server state without holding the interface on a spinner.
+    utils.auth.me.setData(undefined, null);
     try {
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
@@ -47,7 +52,7 @@ export function useAuth(options?: UseAuthOptions) {
         sessionStorage.removeItem("manus-cookie");
       } catch {}
       utils.auth.me.setData(undefined, null);
-      await utils.auth.me.invalidate();
+      void utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
 
@@ -61,7 +66,7 @@ export function useAuth(options?: UseAuthOptions) {
     );
     return {
       user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
+      loading: shouldBlockAuthPresentation(meQuery.isLoading),
       error: meQuery.error ?? logoutMutation.error ?? null,
       isAuthenticated: Boolean(meQuery.data),
     };

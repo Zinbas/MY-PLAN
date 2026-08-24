@@ -237,3 +237,5 @@
 - [x] Redesign MY PLAN sign-in discovery and account entry points so authentication is visibly available, concise, and professional on desktop and mobile.
 - [x] Complete a focused whole-product UX pass covering navigation, sign-in, planning actions, connected tools, feedback states, and compact-phone ergonomics.
 - [x] Research current planner-app user feedback and usability guidance, then document the findings that inform the MY PLAN UX implementation.
+- [ ] Diagnose the reported invisible MY PLAN UX update, verify the exact preview and published deployment versions, and make the revised experience visibly distinct.
+- [ ] Diagnose and remove the reported delay between MY PLAN logout and the visible signed-out state while preserving secure session cleanup.
