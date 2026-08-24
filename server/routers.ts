@@ -8,7 +8,7 @@ import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigure
 import { cancelOwnedPushReminderDeliveries, getAdminOverview, getPushReminderPreferences, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeOwnedPushSubscription, setManagedUserRole, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
-import { extractUploadedSchedule } from "./scheduleImport";
+import { extractUploadedSchedule, scheduleImportFailureMessage } from "./scheduleImport";
 import { createHash, randomBytes } from "node:crypto";
 import { listSparkEvents, replaceSparkAccessToken } from "./db";
 import { createDeliveryKey, encryptPushSubscription, hashPushEndpoint, isAllowedReminderLeadMinutes, isValidQuietHour, normalizePushSubscription, pushReadiness } from "./push";
@@ -80,7 +80,13 @@ export const appRouter = router({
       fileName: z.string().min(1).max(180),
       mimeType: z.string().min(1).max(160),
       contentBase64: z.string().min(1).max(14_000_000),
-    })).mutation(({ ctx, input }) => extractUploadedSchedule(ctx.user.id, input)),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        return await extractUploadedSchedule(ctx.user.id, input);
+      } catch (error) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: scheduleImportFailureMessage(error) });
+      }
+    }),
   }),
   push: router({
     readiness: publicProcedure.query(() => pushReadiness()),

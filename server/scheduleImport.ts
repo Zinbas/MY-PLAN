@@ -25,6 +25,16 @@ type UploadedSchedule = {
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const candidateKinds = new Set(["event", "task", "block"]);
+// Keep the interactive importer on the vision path validated by the public
+// image fixtures. It is faster for schedule screenshots and avoids the
+// intermittent provider response-transform failure seen with the prior model.
+export const SCHEDULE_IMAGE_EXTRACTION_MODEL = "gpt-5-mini";
+
+export function scheduleImportFailureMessage(error: unknown) {
+  const message = error instanceof Error ? error.message.trim() : "";
+  if (/^Upload must be between 1 byte and 10 MB\.|^Supported uploads are |^The schedule scan returned an incomplete response\./.test(message)) return message;
+  return "MY PLAN could not scan this file just now. Please retry once or upload a clearer image under 10 MB.";
+}
 
 function decodeBase64(value: string) {
   const normalized = value.includes(",") ? value.slice(value.indexOf(",") + 1) : value;
@@ -260,7 +270,7 @@ async function modelCandidates(fileName: string, mimeType: string, buffer: Buffe
       ? [{ type: "text" as const, text: `Extract schedule candidates from this ${fileName}.` }, { type: "image_url" as const, image_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}`, detail: "high" as const } }]
       : [{ type: "text" as const, text: `Extract schedule candidates from this ${fileName}.` }, { type: "file_url" as const, file_url: { url: `data:${mimeType};base64,${buffer.toString("base64")}`, mime_type: "application/pdf" as const } }];
   const response = await invokeLLM({
-    model: "gemini-3.1-pro-preview",
+    model: SCHEDULE_IMAGE_EXTRACTION_MODEL,
     max_tokens: 14000,
     messages: [
       { role: "system", content: "You extract schedules cautiously. Return only events, tasks, or focus blocks explicitly supported by the file. For a weekly timetable grid, perform a complete visual inventory: inspect every day column and every time row in reading order, then emit exactly one candidate for every non-empty grid cell. Never summarize, sample, merge, or omit cells because a subject repeats. A single weekday plus start time identifies one grid cell; never return two different candidates for the same weekday/time slot. Set kind to block for weekly timetable cells. Set weekdays to the visible day number where Sunday=0 through Saturday=6. Copy the subject/course label exactly into BOTH title and course. Copy room, faculty, batch, section, code, or other cell details only into notes. Copy the associated row/column time header exactly as 24-hour HH:MM; do not borrow a time or course from an adjacent cell. Before responding, cross-check that each non-empty grid cell has one output and that title, course, weekday, and time agree within that same cell. Use YYYY-MM-DD only when a date is clear; otherwise leave date blank. If text, day, or time is illegible, leave only that field blank instead of guessing. Never invent dates, times, course names, weekdays, rooms, or recurrences. Confidence must be between 0 and 1." },

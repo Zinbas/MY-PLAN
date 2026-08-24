@@ -13,6 +13,7 @@ import { calendarFilterReasons } from "@/lib/calendarFilterReasons";
 import { isValidImportDate } from "@/lib/importDates";
 import { mapSelectedImportCandidates } from "@/lib/importSelection";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
+import { visiblePrivateData } from "@/lib/authPresentation";
 import { onTimeCompletionStats, recentCompletedTasks, sortTodoTasks, weeklyActivity, type TodoSort } from "@/lib/taskInsights";
 import { deadlineCues, deadlineLabel } from "@/lib/planningContext";
 import WorkspaceTools from "./WorkspaceTools";
@@ -95,6 +96,8 @@ export default function Home() {
   const sparkEventRange = useMemo(() => ({ startAt: addMonths(monthStart(new Date()), -12), endAt: addMonths(monthStart(new Date()), 24) }), []);
   const sparkEvents = trpc.spark.events.useQuery(sparkEventRange, { enabled: isAuthenticated });
   const isAdmin = canViewAdminControls(isAuthenticated, user?.role);
+  const visibleConnections = visiblePrivateData(isAuthenticated, persistedConnections.data);
+  const visibleSparkEvents = visiblePrivateData(isAuthenticated, sparkEvents.data);
   const adminStatus = trpc.admin.status.useQuery(undefined, { enabled: Boolean(isAuthenticated && isAdmin) });
   const adminOverview = trpc.admin.overview.useQuery(undefined, { enabled: Boolean(isAuthenticated && isAdmin) });
   const storageScope = workspaceScopeFor(isAuthenticated, user?.id);
@@ -224,6 +227,7 @@ export default function Home() {
   ] : tourSteps, [isMobileViewport]);
   const eventRange = useMemo(() => ({ startAt: addMonths(cursor, -1), endAt: addMonths(cursor, 2) }), [cursor]);
   const linkedEvents = trpc.calendar.events.useQuery(eventRange, { enabled: isAuthenticated });
+  const visibleLinkedEvents = visiblePrivateData(isAuthenticated, linkedEvents.data);
   const updateCalendarVisibility = trpc.calendar.setVisibility.useMutation({ onSuccess: () => { void persistedConnections.refetch(); void linkedEvents.refetch(); setToast("Calendar selection saved. MY PLAN will only show and sync the calendars you selected."); }, onError: () => setToast("MY PLAN could not save that calendar choice. Please try again.") });
   const extractSchedule = trpc.schedule.extract.useMutation({
     onSuccess: result => {
@@ -244,10 +248,10 @@ export default function Home() {
     const hasTimestamp = (id: string) => timestampFor(id) === latest;
     return { blockIds: plannerBlocks.filter(block => hasTimestamp(block.id)).map(block => block.id), eventIds: personalEvents.filter(event => hasTimestamp(event.id)).map(event => event.id), taskIds: tasks.filter(task => hasTimestamp(task.id)).map(task => task.id) };
   }, [plannerBlocks, personalEvents, tasks]);
-  const eventBlocks = useMemo<PlannerBlock[]>(() => [...personalEvents.map(event => ({ id: event.id, title: event.title, startAt: event.startAt, endAt: event.endAt, source: "event" as const, priority: event.priority, course: event.course, notes: event.notes })), ...(sparkEvents.data ?? []).map(event => ({ id: `spark-${event.id}`, title: event.title, startAt: event.startAt, endAt: event.endAt, source: "event" as const, priority: "normal" as Priority, course: "Gemini Spark", notes: event.description || "Created through your connected Spark app." }))], [personalEvents, sparkEvents.data]);
+  const eventBlocks = useMemo<PlannerBlock[]>(() => [...personalEvents.map(event => ({ id: event.id, title: event.title, startAt: event.startAt, endAt: event.endAt, source: "event" as const, priority: event.priority, course: event.course, notes: event.notes })), ...visibleSparkEvents.map(event => ({ id: `spark-${event.id}`, title: event.title, startAt: event.startAt, endAt: event.endAt, source: "event" as const, priority: "normal" as Priority, course: "Gemini Spark", notes: event.description || "Created through your connected Spark app." }))], [personalEvents, visibleSparkEvents]);
   const taskBlocks = useMemo<PlannerBlock[]>(() => tasks.filter(isTaskScheduled).map(task => ({ id: task.id, title: task.title, startAt: task.scheduledStartAt!, endAt: taskEndAt(task), source: "task", priority: task.priority, completed: isTaskComplete(task) })), [tasks]);
-  const linkedBlocks = useMemo<PlannerBlock[]>(() => (linkedEvents.data ?? []).map(event => ({ id: `linked-${event.id}`, title: event.title, startAt: event.startAt, endAt: event.endAt, source: "linked", priority: "normal" })), [linkedEvents.data]);
-  const selectedLinkedCalendarCount = useMemo(() => (persistedConnections.data ?? []).reduce((total, connection) => total + connection.calendars.filter(calendar => calendar.isVisible).length, 0), [persistedConnections.data]);
+  const linkedBlocks = useMemo<PlannerBlock[]>(() => visibleLinkedEvents.map(event => ({ id: `linked-${event.id}`, title: event.title, startAt: event.startAt, endAt: event.endAt, source: "linked", priority: "normal" })), [visibleLinkedEvents]);
+  const selectedLinkedCalendarCount = useMemo(() => visibleConnections.reduce((total, connection) => total + connection.calendars.filter(calendar => calendar.isVisible).length, 0), [visibleConnections]);
   const allCalendarBlocks = useMemo(() => [...(isAdmin ? academicEvents : []), ...blocks, ...eventBlocks, ...taskBlocks, ...linkedBlocks], [blocks, eventBlocks, isAdmin, linkedBlocks, taskBlocks]);
   const notificationItems = useMemo(() => planningNotifications(tasks, [...blocks, ...eventBlocks, ...taskBlocks], new Date(), notificationPreferences), [blocks, eventBlocks, notificationPreferences, taskBlocks, tasks]);
   const unreadNotificationItems = useMemo(() => notificationItems.filter(item => !readNotificationIds.includes(item.id)), [notificationItems, readNotificationIds]);

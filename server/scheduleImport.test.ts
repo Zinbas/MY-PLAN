@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { csvRows, deduplicateTimetableCandidates, icsCandidates, rowCandidates, workbookCandidates } from "./scheduleImport";
+import { csvRows, deduplicateTimetableCandidates, icsCandidates, rowCandidates, scheduleImportFailureMessage, SCHEDULE_IMAGE_EXTRACTION_MODEL, workbookCandidates } from "./scheduleImport";
 
 describe("schedule import parsers", () => {
+  it("uses the validated interactive vision model for image schedule reviews", () => {
+    expect(SCHEDULE_IMAGE_EXTRACTION_MODEL).toBe("gpt-5-mini");
+  });
+
+  it("replaces provider response failures with clear retry guidance", () => {
+    expect(scheduleImportFailureMessage(new Error("Unable to transform response from server"))).toMatch(/could not scan this file/i);
+    expect(scheduleImportFailureMessage(new Error("Upload must be between 1 byte and 10 MB."))).toBe("Upload must be between 1 byte and 10 MB.");
+  });
+
   it("extracts event candidates from an ICS calendar without invoking a model", () => {
     const candidates = icsCandidates(`BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Calculus Quiz\nDTSTART:20260911T103000\nDTEND:20260911T113000\nDESCRIPTION:Unit II review\nEND:VEVENT\nEND:VCALENDAR`);
     expect(candidates).toHaveLength(1);

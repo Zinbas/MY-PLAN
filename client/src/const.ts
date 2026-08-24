@@ -1,4 +1,5 @@
 import { OAUTH_STATE_COOKIE, encodeOAuthState } from "@shared/const";
+import { EXTERNAL_AUTH_PENDING_KEY } from "@/lib/externalAuthRefresh";
 
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
@@ -27,8 +28,12 @@ export const startLogin = () => {
   url.searchParams.set("state", state);
   url.searchParams.set("type", "signIn");
 
-  // Keep the full authorization journey in the current visible tab. Popup
-  // windows are commonly blocked or rendered as an empty surface by embedded
-  // and mobile browsers, leaving users unable to return to MY PLAN.
-  window.location.assign(url.toString());
+  // Keep the planner available while the external provider handles sign-in.
+  // This is the previously validated flow for embedded and browser-operator
+  // contexts where navigating the current tab can strand users at about:blank.
+  try {
+    sessionStorage.setItem(EXTERNAL_AUTH_PENDING_KEY, "1");
+  } catch {}
+  const opened = window.open(url.toString(), "_blank", "noopener,noreferrer");
+  if (!opened) window.location.assign(url.toString());
 };

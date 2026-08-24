@@ -1,6 +1,7 @@
 import { startLogin } from "@/const";
 import { safelySetBrowserStorage } from "@/lib/safeBrowserStorage";
 import { shouldBlockAuthPresentation } from "@/lib/authPresentation";
+import { EXTERNAL_AUTH_PENDING_KEY, shouldRefreshAfterExternalAuth } from "@/lib/externalAuthRefresh";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
@@ -29,11 +30,29 @@ export function useAuth(options?: UseAuthOptions) {
     },
   });
 
+  useEffect(() => {
+    const refreshAfterReturningFromAuth = () => {
+      try {
+        if (!shouldRefreshAfterExternalAuth(sessionStorage.getItem(EXTERNAL_AUTH_PENDING_KEY))) return;
+      } catch {
+        return;
+      }
+      void meQuery.refetch().finally(() => {
+        try {
+          sessionStorage.removeItem(EXTERNAL_AUTH_PENDING_KEY);
+        } catch {}
+      });
+    };
+    window.addEventListener("focus", refreshAfterReturningFromAuth);
+    return () => window.removeEventListener("focus", refreshAfterReturningFromAuth);
+  }, [meQuery.refetch]);
+
   const logout = useCallback(async () => {
     // The signed-out shell must appear as soon as the user deliberately logs
     // out. Cookie clearing continues in the background; a later invalidation
     // confirms the server state without holding the interface on a spinner.
     utils.auth.me.setData(undefined, null);
+    utils.calendar.connections.setData(undefined, []);
     try {
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
@@ -52,6 +71,7 @@ export function useAuth(options?: UseAuthOptions) {
         sessionStorage.removeItem("manus-cookie");
       } catch {}
       utils.auth.me.setData(undefined, null);
+      utils.calendar.connections.setData(undefined, []);
       void utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
