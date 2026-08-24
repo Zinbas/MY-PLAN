@@ -13,6 +13,7 @@ import { calendarFilterReasons } from "@/lib/calendarFilterReasons";
 import { isValidImportDate } from "@/lib/importDates";
 import { mapSelectedImportCandidates } from "@/lib/importSelection";
 import { applyOptimisticCalendarSelection } from "@/lib/calendarSelectionOptimistic";
+import { calendarSelectionSaveMessage } from "@/lib/calendarSelectionFeedback";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
 import { visiblePrivateData } from "@/lib/authPresentation";
 import { shouldOfferFirstVisit, type FirstVisitChoice, type FirstVisitStage } from "@/lib/firstVisitFlow";
@@ -255,9 +256,9 @@ export default function Home() {
       trpcUtils.calendar.connections.setData(undefined, current => applyOptimisticCalendarSelection(current, linkedCalendarId, isVisible));
       return { previousConnections };
     },
-    onSuccess: () => {
+    onSuccess: result => {
       void linkedEvents.refetch();
-      setToast("Calendar selection saved. MY PLAN will only show and sync the calendars you selected.");
+      setToast(calendarSelectionSaveMessage(result));
     },
     onError: (_error, _input, context) => {
       trpcUtils.calendar.connections.setData(undefined, context?.previousConnections);

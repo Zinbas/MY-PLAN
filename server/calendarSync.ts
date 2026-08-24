@@ -48,8 +48,17 @@ export async function importGoogleCalendarConnection(userId: number, connectionI
 export async function setGoogleCalendarSelection(userId: number, linkedCalendarId: number, isVisible: boolean, callbackUrl: string) {
   const calendar = await db.setOwnedLinkedCalendarVisibility(userId, linkedCalendarId, isVisible);
   if (!calendar) throw new Error("CALENDAR_NOT_FOUND");
-  if (isVisible) await syncSelectedGoogleCalendar(userId, linkedCalendarId, callbackUrl);
-  return calendar;
+  if (!isVisible) return { ...calendar, syncStatus: "idle" as const };
+  try {
+    await syncSelectedGoogleCalendar(userId, linkedCalendarId, callbackUrl);
+    return { ...calendar, syncStatus: "healthy" as const };
+  } catch (error) {
+    // The user's selection has already been persisted. A refresh/watch failure
+    // must not make the picker falsely claim that the choice was discarded.
+    const lastError = error instanceof Error ? error.message : "Google sync needs attention";
+    await db.setCalendarSyncState(linkedCalendarId, { syncStatus: "attention", lastError });
+    return { ...calendar, syncStatus: "attention" as const };
+  }
 }
 
 async function syncSelectedGoogleCalendar(userId: number, linkedCalendarId: number, callbackUrl: string) {
