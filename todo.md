@@ -247,3 +247,7 @@
 - [x] Replace the floating account chip with a polished first-visit MY PLAN welcome flow that asks users to sign in or continue as a guest, then asks whether they want a tutorial.
 - [ ] Complete and verify the visible native MY PLAN device-reminder opt-in experience while keeping VAPID credentials and durable delivery activation securely gated.
 - [ ] Validate the securely configured VAPID readiness endpoint, publish the activation code, and create the cron-only one-minute MY PLAN reminder dispatcher without sending unapproved reminders.
+- [ ] Remove the unexpected production-only “Made with Manus” overlay so MY PLAN remains the sole product-facing brand.
+- [x] Correct the reported connected-calendar selection-card visual misalignment while preserving all existing selections.
+- [ ] Reproduce one user-authorized connected-calendar selection toggle and restore its exact original state without modifying events.
+- [x] Make connected-calendar selection acknowledge immediately, with optimistic success state and safe rollback when persistence fails.

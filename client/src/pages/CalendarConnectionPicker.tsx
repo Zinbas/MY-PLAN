@@ -1,5 +1,6 @@
 import { CalendarCheck2, CalendarDays, Check, LockKeyhole, RefreshCw } from "lucide-react";
 import { calendarSelectionSummary } from "@/lib/calendarSelectionUx";
+import "./calendarConnectionPicker.css";
 
 type Calendar = { id: number; summary: string; isPrimary: boolean; isVisible: boolean; accessRole?: string | null };
 type Connection = { id: number; email: string; accountType: string; calendars: Calendar[] };
@@ -18,7 +19,7 @@ export default function CalendarConnectionPicker({ connections, isSaving, onTogg
         <div className="calendar-choice-grid" role="group" aria-label={`Calendars for ${connection.email}`}>
           {connection.calendars.map(calendar => <button type="button" key={calendar.id} className={`calendar-choice ${calendar.isVisible ? "is-selected" : ""}`} aria-pressed={calendar.isVisible} disabled={isSaving} onClick={() => onToggle(calendar.id, !calendar.isVisible)}>
             <span className="calendar-choice-check" aria-hidden="true">{calendar.isVisible ? <Check size={15} /> : null}</span>
-            <span className="calendar-choice-copy"><b>{calendar.summary}</b><small>{calendar.isPrimary ? "Primary calendar" : calendar.accessRole || "Google calendar"}</small></span>
+            <span className="calendar-choice-copy"><b title={calendar.summary}>{calendar.summary}</b><small>{calendar.isPrimary ? "Primary calendar" : calendar.accessRole || "Google calendar"}</small></span>
             {calendar.isPrimary ? <span className="calendar-primary-label">Primary</span> : null}
           </button>)}
         </div>

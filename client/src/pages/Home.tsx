@@ -12,6 +12,7 @@ import { dailyQuoteForDate } from "@/lib/dailyQuote";
 import { calendarFilterReasons } from "@/lib/calendarFilterReasons";
 import { isValidImportDate } from "@/lib/importDates";
 import { mapSelectedImportCandidates } from "@/lib/importSelection";
+import { applyOptimisticCalendarSelection } from "@/lib/calendarSelectionOptimistic";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
 import { visiblePrivateData } from "@/lib/authPresentation";
 import { shouldOfferFirstVisit, type FirstVisitChoice, type FirstVisitStage } from "@/lib/firstVisitFlow";
@@ -91,6 +92,7 @@ function formatElapsed(seconds: number) { const hours = Math.floor(seconds / 360
 
 export default function Home() {
   const { isAuthenticated, user, loading, logout } = useAuth();
+  const trpcUtils = trpc.useUtils();
   const readiness = trpc.calendar.readiness.useQuery();
   const persistedConnections = trpc.calendar.connections.useQuery(undefined, { enabled: isAuthenticated });
   const createSparkAccessToken = trpc.spark.createAccessToken.useMutation();
@@ -246,7 +248,23 @@ export default function Home() {
   const eventRange = useMemo(() => ({ startAt: addMonths(cursor, -1), endAt: addMonths(cursor, 2) }), [cursor]);
   const linkedEvents = trpc.calendar.events.useQuery(eventRange, { enabled: isAuthenticated });
   const visibleLinkedEvents = visiblePrivateData(isAuthenticated, linkedEvents.data);
-  const updateCalendarVisibility = trpc.calendar.setVisibility.useMutation({ onSuccess: () => { void persistedConnections.refetch(); void linkedEvents.refetch(); setToast("Calendar selection saved. MY PLAN will only show and sync the calendars you selected."); }, onError: () => setToast("MY PLAN could not save that calendar choice. Please try again.") });
+  const updateCalendarVisibility = trpc.calendar.setVisibility.useMutation({
+    onMutate: async ({ linkedCalendarId, isVisible }) => {
+      await trpcUtils.calendar.connections.cancel();
+      const previousConnections = trpcUtils.calendar.connections.getData();
+      trpcUtils.calendar.connections.setData(undefined, current => applyOptimisticCalendarSelection(current, linkedCalendarId, isVisible));
+      return { previousConnections };
+    },
+    onSuccess: () => {
+      void linkedEvents.refetch();
+      setToast("Calendar selection saved. MY PLAN will only show and sync the calendars you selected.");
+    },
+    onError: (_error, _input, context) => {
+      trpcUtils.calendar.connections.setData(undefined, context?.previousConnections);
+      setToast("MY PLAN could not save that calendar choice. The card was restored.");
+    },
+    onSettled: () => void trpcUtils.calendar.connections.invalidate(),
+  });
   const extractSchedule = trpc.schedule.extract.useMutation({
     onSuccess: result => {
       const candidates = result.candidates.map(candidate => ({ ...candidate, approved: false }));
