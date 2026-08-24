@@ -241,6 +241,7 @@
 - [x] Diagnose and remove the reported delay between MY PLAN logout and the visible signed-out state while preserving secure session cleanup.
 - [x] Exercise the current MY PLAN preview’s updated UX and measure the signed-out render timing after an explicit logout without modifying planner data.
 - [x] Diagnose and repair the blank MY PLAN sign-in redirect that currently ends at about:blank before completing authenticated logout verification.
-- [ ] Diagnose and repair the image schedule-import “Unable to transform response from server” error without importing user data.
+- [x] Diagnose and repair the image schedule-import “Unable to transform response from server” error without importing user data.
 - [x] Validate the repaired image schedule importer with a non-writing review fixture matching the reported JPEG upload path.
 - [x] Clear cached Google connection and selected-calendar interface data immediately on MY PLAN logout without altering server-side connections or planning data.
+- [x] Replace the floating account chip with a polished first-visit MY PLAN welcome flow that asks users to sign in or continue as a guest, then asks whether they want a tutorial.

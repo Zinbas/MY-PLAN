@@ -14,12 +14,13 @@ import { isValidImportDate } from "@/lib/importDates";
 import { mapSelectedImportCandidates } from "@/lib/importSelection";
 import { canViewAdminControls, mergeWorkspaceItemsById, workspaceScopeFor, workspaceStorageKey } from "@/lib/privateWorkspace";
 import { visiblePrivateData } from "@/lib/authPresentation";
+import { shouldOfferFirstVisit, type FirstVisitChoice, type FirstVisitStage } from "@/lib/firstVisitFlow";
 import { onTimeCompletionStats, recentCompletedTasks, sortTodoTasks, weeklyActivity, type TodoSort } from "@/lib/taskInsights";
 import { deadlineCues, deadlineLabel } from "@/lib/planningContext";
 import WorkspaceTools from "./WorkspaceTools";
 import ReminderWorkspace from "./ReminderWorkspace";
 import CalendarConnectionPicker from "./CalendarConnectionPicker";
-import AccountQuickAccess from "@/components/AccountQuickAccess";
+import FirstVisitWelcome from "@/components/FirstVisitWelcome";
 import { loadScopedBlocks, loadScopedEvents, loadScopedTasks } from "@/lib/workspaceLoader";
 import { defaultNotificationPreferences, loadNotificationPreferences, loadReadNotificationIds, planningNotifications, saveReadNotificationIds, type NotificationPreferences } from "@/lib/notifications";
 import { ArrowRight, BarChart3, Bell, BookOpenCheck, CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CirclePlus, Clock3, CloudCog, Copy, Edit3, ExternalLink, Flag, GraduationCap, ListChecks, ListTodo, LogIn, LogOut, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Sparkles, Square, Star, Trash2, Upload, UserRound, Users, X } from "lucide-react";
@@ -143,6 +144,8 @@ export default function Home() {
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [welcomeRetired, setWelcomeRetired] = useState(() => Boolean(localStorage.getItem("my-plan-welcome-retired")));
+  const [firstVisitStage, setFirstVisitStage] = useState<FirstVisitStage>("hidden");
+  const [firstVisitChoice, setFirstVisitChoice] = useState<FirstVisitChoice | null>(null);
   const [dateContextMenu, setDateContextMenu] = useState<DateContextMenu | null>(null);
   const [mobileDateAction, setMobileDateAction] = useState<Date | null>(null);
   const [activeTimer, setActiveTimer] = useState<ActiveTaskTimer | null>(() => loadActiveTimer());
@@ -211,7 +214,22 @@ export default function Home() {
     return () => media.removeEventListener("change", updateViewport);
   }, []);
   useEffect(() => { if (!activeTimer?.startedAt) return; const interval = window.setInterval(() => setTimerNow(Date.now()), 1000); return () => window.clearInterval(interval); }, [activeTimer?.startedAt]);
-  useEffect(() => { if (!isAuthenticated || welcomeRetired) return; localStorage.setItem("my-plan-welcome-retired", "true"); localStorage.setItem("my-plan-welcome-seen", "true"); setWelcomeRetired(true); setSection("calendar"); }, [isAuthenticated, welcomeRetired]);
+  useEffect(() => {
+    if (loading) return;
+    const hasPreviousWelcomeState = Boolean(localStorage.getItem("my-plan-welcome-seen") || localStorage.getItem("my-plan-welcome-retired") || localStorage.getItem("my-plan-tour-complete"));
+    if (shouldOfferFirstVisit({ isAuthenticated, hasCompletedEntry: Boolean(localStorage.getItem("my-plan-first-visit-complete")), hasPreviousWelcomeState })) setFirstVisitStage("choice");
+  }, [isAuthenticated, loading]);
+  useEffect(() => {
+    if (!isAuthenticated || welcomeRetired) return;
+    const startTourAfterSignIn = localStorage.getItem("my-plan-first-visit-tour") === "true";
+    localStorage.removeItem("my-plan-first-visit-tour");
+    localStorage.setItem("my-plan-welcome-retired", "true");
+    localStorage.setItem("my-plan-welcome-seen", "true");
+    setWelcomeRetired(true);
+    setFirstVisitStage("hidden");
+    setSection("calendar");
+    if (startTourAfterSignIn) window.setTimeout(() => { setTourStep(0); setShowTour(true); }, 120);
+  }, [isAuthenticated, welcomeRetired]);
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") { closePopovers(); setShowComposer(false); setDateContextMenu(null); setMobileDateAction(null); setShowTour(false); setShowNotifications(false); } };
     document.addEventListener("keydown", closeOnEscape);
@@ -310,6 +328,23 @@ export default function Home() {
   const changeView = (next: ViewMode) => { closePopovers(); setView(next); };
   const openSection = (next: Section) => { closePopovers(); setSection(next); setShowSidebar(false); };
   const beginPlanning = () => { localStorage.setItem("my-plan-welcome-seen", "true"); openSection("calendar"); setToast("Welcome to MY PLAN. Start with one next action."); };
+  const chooseFirstVisit = (choice: FirstVisitChoice) => { setFirstVisitChoice(choice); setFirstVisitStage("tutorial"); };
+  const finishFirstVisit = (takeTour: boolean) => {
+    if (!firstVisitChoice) return;
+    localStorage.setItem("my-plan-first-visit-complete", "true");
+    if (firstVisitChoice === "sign-in") {
+      localStorage.setItem("my-plan-first-visit-tour", String(takeTour));
+      setFirstVisitStage("hidden");
+      startLogin();
+      return;
+    }
+    localStorage.setItem("my-plan-welcome-retired", "true");
+    localStorage.setItem("my-plan-welcome-seen", "true");
+    setWelcomeRetired(true);
+    setFirstVisitStage("hidden");
+    setSection("calendar");
+    if (takeTour) window.setTimeout(() => openTour(), 120); else setToast("Welcome to MY PLAN. Start with one next action.");
+  };
   const openTour = () => { setTourStep(0); setShowTour(true); };
   const closeTour = (message = "Tutorial dismissed. You can return to Welcome any time.") => { setShowTour(false); setToast(message); };
   const retireWelcome = (message: string) => { localStorage.setItem("my-plan-tour-complete", "true"); localStorage.setItem("my-plan-welcome-retired", "true"); localStorage.setItem("my-plan-welcome-seen", "true"); setWelcomeRetired(true); setShowTour(false); setSection("calendar"); setToast(message); };
@@ -476,7 +511,7 @@ export default function Home() {
   const selectedDateLabel = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(selectedDate);
   if (loading) return <BrandLoader label="Opening your workspace…" />;
   return <div className={`ongoing-shell ${sidebarCollapsed ? "is-sidebar-collapsed" : ""}`}>
-    <AccountQuickAccess isAuthenticated={isAuthenticated} name={user?.name} onSignIn={() => startLogin()} onOpenAccount={() => openSection("accounts")} />
+    <FirstVisitWelcome stage={firstVisitStage} choice={firstVisitChoice} onChoose={chooseFirstVisit} onTutorialChoice={finishFirstVisit} />
     {showSidebar ? <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setShowSidebar(false)} /> : null}
     <aside className={`ongoing-sidebar ${showSidebar ? "is-open" : ""} ${sidebarCollapsed ? "is-collapsed" : ""}`}><button className="brand-line" onClick={returnHome} aria-label="Return to MY PLAN home"><div className="tab-mark"><img src={MY_PLAN_LOGO_URL} alt="" /></div><div><span>Your clear plan</span><strong>MY PLAN</strong></div></button><div className="side-nav">{!welcomeRetired ? <button className={section === "welcome" ? "active" : ""} onClick={() => openSection("welcome")}><BookOpenCheck size={17} /> Welcome</button> : null}<button className={section === "calendar" ? "active" : ""} onClick={() => openSection("calendar")}><CalendarDays size={17} /> Calendar</button><button className={section === "todo" ? "active" : ""} onClick={() => openSection("todo")}><ListTodo size={17} /> To-do</button><button className={section === "progress" ? "active" : ""} onClick={() => openSection("progress")}><BarChart3 size={17} /> Progress</button><button className={section === "tools" || section === "accounts" || section === "sync" || section === "import" || section === "spark" || section === "reminders" ? "active" : ""} onClick={() => openSection("tools")}><MoreHorizontal size={17} /> Workspace tools</button>{isAdmin ? <button className={section === "admin" ? "active" : ""} onClick={() => openSection("admin")}><ShieldCheck size={17} /> Admin panel</button> : null}</div><div className="side-footer"><ShieldCheck size={15} /><p>Plan locally first. Sign in only when you want a MY PLAN account or connected services.</p></div></aside>
     <main className="ongoing-main" onPointerDownCapture={event => { const target = event.target as HTMLElement; if (!(target.closest(".control-anchor") || target.closest(".date-context-menu") || target.closest(".mobile-date-sheet"))) { closePopovers(); setDateContextMenu(null); setMobileDateAction(null); } }}><header className="ongoing-topbar"><button className="desktop-sidebar-toggle" onClick={() => setSidebarCollapsed(value => !value)} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>{sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button><button className="mobile-menu" onClick={() => setShowSidebar(value => !value)} aria-label={showSidebar ? "Close navigation" : "Open navigation"} title={showSidebar ? "Close navigation" : "Open navigation"}>{showSidebar ? <X size={19} /> : <Menu size={19} />}</button><span className="toast-line">{toast}</span><div className="top-actions"><button onClick={goToday}><CalendarDays size={15} /> Today</button><button onClick={() => openComposer("task")}><ListTodo size={15} /> Add task</button><button onClick={() => openComposer("event")}><CalendarPlus size={15} /> Add event</button><button className="accent" onClick={() => openComposer("block")}><Plus size={16} /> Add block</button></div></header>
