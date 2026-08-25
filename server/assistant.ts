@@ -27,6 +27,26 @@ const assistantResponseSchema = {
   },
 };
 
+const nonCreationActionPattern = /\b(delete|remove|cancel|edit|update|change|modify|rename|reschedule|move|duplicate|complete|mark|clear|dismiss|archive|unschedule|sync|import|export|share|notify)\b/i;
+const explicitCreationPattern = /\b(create|add|plan|schedule|set|remind|block)\b/i;
+
+export function nonCreationAssistantDraft(message: string): AssistantCommandDraft | null {
+  if (!nonCreationActionPattern.test(message) || explicitCreationPattern.test(message)) return null;
+  return {
+    kind: "task",
+    title: "A new plan is needed",
+    date: null,
+    time: null,
+    durationMinutes: null,
+    priority: "normal",
+    course: null,
+    notes: null,
+    reminderLeadMinutes: null,
+    needsClarification: true,
+    clarification: "MY PLAN Assistant can prepare a new task, event, or focus block, but it cannot delete, edit, move, sync, import, export, or send anything. What new plan should I prepare?",
+  };
+}
+
 function assistantSystemPrompt({ referenceDate, timeZone }: AssistantDraftInput) {
   return `You are MY PLAN Assistant. Convert one planning request into a draft only. Never claim an action was saved, sent, scheduled, synced, deleted, or completed. Return JSON only.
 
@@ -39,6 +59,8 @@ Never invent a date, time, reminder, course, notes, or private data. If the requ
 
 export async function draftAssistantCommand(rawInput: AssistantDraftInput): Promise<AssistantCommandDraft> {
   const input = assistantDraftInputSchema.parse(rawInput);
+  const nonCreationDraft = nonCreationAssistantDraft(input.message);
+  if (nonCreationDraft) return nonCreationDraft;
   const response = await invokeLLM({
     model: "gpt-5-mini",
     maxCompletionTokens: 700,

@@ -317,3 +317,7 @@
 - [x] Validate the MY PLAN Assistant on desktop and compact phone, then publish the reviewed-action workflow.
 - [x] Independently run representative MY PLAN Assistant commands for task, event, focus block, date-only planning, optional reminder, minor typo/slang, and unclear-date clarification without saving planner data.
 - [x] Repair every reproducible Assistant parsing or review-safety issue found, then repeat the affected commands before requesting user testing.
+- [ ] Aggressively stress-test MY PLAN Assistant parsing with varied natural language, typos, slang, ambiguous wording, invalid calendar dates, invalid reminder timing, date-only commands, and review-only safety without writing planner data.
+- [ ] Probe MY PLAN Assistant transport, structured validation, and rate-limit boundaries safely; fix and retest every reproducible issue before user testing.
+- [x] Prevent destructive, edit, sync, or send commands from being represented as a planner draft; require a clear Assistant clarification instead.
+- [x] Verify that an Assistant command alone creates no task, event, focus block, reminder enrollment, calendar change, or notification; only the existing final Save action may create the reviewed planner item.
