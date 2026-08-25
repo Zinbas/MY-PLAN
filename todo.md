@@ -260,4 +260,4 @@
 - [x] Strengthen revocable session lifecycle, production log redaction, and abuse controls for sensitive or costly routes.
 - [x] Add installable-app metadata, mobile fixed-control/touch-target safeguards, and social-sharing metadata.
 - [x] Add continuous integration and complete a staged Home/CSS maintainability refactor without regressing the Paper Field Notes design.
-- [ ] Synchronize the latest verified MY PLAN source and continuous-integration workflow to the user-approved private GitHub repository without committing secrets or private planner data.
+- [x] Synchronize the latest verified MY PLAN source and continuous-integration workflow to the user-approved GitHub repository without committing secrets or private planner data.
