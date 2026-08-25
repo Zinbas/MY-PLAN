@@ -132,6 +132,7 @@
 - [x] Record final-pass findings for Calendar, Progress, Sync, Spark, Welcome, tutorial, composer, and date-action surfaces alongside the previously reviewed Accounts, Import, and To-do screens.
 - [ ] Verify the connected GitHub repository and, with user confirmation, upload a small non-sensitive test subset of MY PLAN files.
 - [ ] Defer the GitHub test export until MY PLAN is complete; use neutral MY PLAN-only repository metadata with no Manus attribution.
+- [x] Verify the connected GitHub repository and push the validated website reminder and Profile/Workspace navigation update to its main branch.
 - [ ] After live validation, prepare a neutral GitHub handoff and user-controlled external deployment guide for MY PLAN with no Manus attribution.
 - [x] Confirm the user’s intended Spark service and its supported MY PLAN connection method before configuring access.
 - [x] Prepare and verify the safe Spark connection workflow without changing Google Calendar, OAuth, or private planner data.
