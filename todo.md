@@ -333,3 +333,4 @@
 - [x] Fix image-import confirmation so clicking Add all selected persists each selected event and refreshes the calendar view without duplicate or unrelated entries.
 - [x] Reconfirm the latest published import repair is synchronized to GitHub main and push any missing committed website changes.
 - [x] Verify the complete current MY PLAN tracked file set against GitHub main and synchronize any missing committed change.
+- [x] Package the verified managed-project GitHub audit and synchronization workflow as a reusable skill.
