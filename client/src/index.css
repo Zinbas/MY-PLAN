@@ -243,3 +243,6 @@
 .tools-secondary>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .tools-secondary .tool-card{padding:13px}.tools-secondary .tool-card strong{font-size:16px}
 @media (max-width:820px){.tools-secondary>div{grid-template-columns:1fr}.tools-secondary .tool-card{padding:14px}}
+
+/* Keep reminder timing focused: the complete selector remains, while redundant shortcut controls stay out of the way. */
+.reminder-quick-picks,.reminder-advanced-hint{display:none}

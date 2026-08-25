@@ -296,3 +296,6 @@
 - [ ] Simplify the primary action hierarchy and navigation labels across the website without removing advanced controls or existing features.
 - [ ] Make common creation, editing, import, sync, reminder, profile, and workspace actions easier to discover and operate.
 - [ ] Revalidate feature parity, responsive layouts, accessibility, tests, and planner/calendar data safety after the usability pass.
+- [x] Remove the cluttered quick-reminder chips and restore the clean reminder selector without removing reminder capabilities.
+- [x] Replace free-text planner date entry with a validated native calendar date picker so letters cannot be entered.
+- [x] Validate the restored composer and date picker on desktop and compact phone, then publish the correction.

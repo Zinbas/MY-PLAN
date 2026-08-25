@@ -222,6 +222,13 @@ export default function Home() {
   }, []);
   useEffect(() => { if (!activeTimer?.startedAt) return; const interval = window.setInterval(() => setTimerNow(Date.now()), 1000); return () => window.clearInterval(interval); }, [activeTimer?.startedAt]);
   useEffect(() => {
+    if (!showComposer) return;
+    document.querySelectorAll<HTMLInputElement>('input[aria-label="Date YYYY-MM-DD"]').forEach(field => {
+      field.type = "date";
+      field.inputMode = "none";
+    });
+  }, [showComposer]);
+  useEffect(() => {
     if (loading) return;
     const hasPreviousWelcomeState = Boolean(localStorage.getItem("my-plan-welcome-seen") || localStorage.getItem("my-plan-welcome-retired") || localStorage.getItem("my-plan-tour-complete"));
     if (shouldOfferFirstVisit({ isAuthenticated, hasCompletedEntry: Boolean(localStorage.getItem("my-plan-first-visit-complete")), hasPreviousWelcomeState })) setFirstVisitStage("choice");
