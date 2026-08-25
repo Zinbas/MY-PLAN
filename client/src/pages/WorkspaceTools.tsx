@@ -12,11 +12,14 @@ export default function WorkspaceTools({ onOpen, isAuthenticated, onSignIn }: { 
       <button className="tool-card is-primary tool-card-account" onClick={() => isAuthenticated ? onOpen("accounts") : onSignIn()}><CirclePlus size={20} /><span><strong>{isAuthenticated ? "Account & calendar" : "Sign in to MY PLAN"}</strong><small>{isAuthenticated ? "Manage your private account, connect Google, and choose the calendars that belong to you." : "Create your private MY PLAN account to sync calendars, import schedules, and use connected tools."}</small></span>{isAuthenticated ? <ArrowRight size={16} /> : <LogIn size={16} />}</button>
       <button className="tool-card" onClick={() => onOpen("import")}><Upload size={20} /><span><strong>Import a schedule</strong><small>Turn a PDF, image, document, spreadsheet, CSV, or ICS file into private review suggestions.</small></span><ArrowRight size={16} /></button>
     </div>
-    <details className="tools-more"><summary>More workspace utilities <span>Reminders, Sync and Gemini Spark</span></summary><div>
+    <section className="tools-secondary" aria-label="More workspace utilities">
+      <p className="tools-secondary-label">More workspace utilities</p>
+      <div>
       <button className="tool-card" onClick={() => onOpen("reminders")}><BellRing size={18} /><span><strong>Device reminders</strong><small>Choose timing and enable private MY PLAN notifications on your devices.</small></span><ArrowRight size={15} /></button>
       <button className="tool-card" onClick={() => onOpen("sync")}><RefreshCw size={18} /><span><strong>Sync center</strong><small>Review connection health and reminder delivery.</small></span><ArrowRight size={15} /></button>
       <button className="tool-card" onClick={() => onOpen("spark")}><Sparkles size={18} /><span><strong>Gemini Spark</strong><small>Review the separate, secure connection setup.</small></span><ArrowRight size={15} /></button>
-    </div></details>
+      </div>
+    </section>
     <aside className="tools-note"><ShieldCheck size={17} /><span>Connections and imports stay private to the MY PLAN account that owns them.</span></aside>
   </section>;
 }
