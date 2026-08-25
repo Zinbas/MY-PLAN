@@ -6,11 +6,15 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { startLogin } from "./const";
+import { registerMyPlanServiceWorker } from "./lib/webPush";
 import "./index.css";
 import "./motion.css";
 import "./reminders.css";
 
 const queryClient = new QueryClient();
+
+// Installability does not imply notification consent. The browser asks only from the explicit reminder button.
+void registerMyPlanServiceWorker().catch(() => undefined);
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;

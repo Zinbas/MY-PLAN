@@ -25,6 +25,18 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+/** Individually revocable hashes of browser session credentials. Raw JWTs never enter this table. */
+export const applicationSessions = mysqlTable("applicationSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: varchar("tokenHash", { length: 64 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  revokedAt: timestamp("revokedAt"),
+  lastSeenAt: timestamp("lastSeenAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [index("applicationSessions_user_status_idx").on(table.userId, table.revokedAt, table.expiresAt)]);
+
 /** Google or Google Workspace identity linked by an application user. Tokens remain server-only. */
 export const calendarConnections = mysqlTable("calendarConnections", {
   id: int("id").autoincrement().primaryKey(),
@@ -204,6 +216,7 @@ export const personalReminderItems = mysqlTable("personalReminderItems", {
 ]);
 
 export type CalendarConnection = typeof calendarConnections.$inferSelect;
+export type ApplicationSession = typeof applicationSessions.$inferSelect;
 export type LinkedCalendar = typeof linkedCalendars.$inferSelect;
 export type SyncedEvent = typeof syncedEvents.$inferSelect;
 export type SparkEvent = typeof sparkEvents.$inferSelect;

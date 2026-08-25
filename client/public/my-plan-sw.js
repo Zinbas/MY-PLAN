@@ -1,4 +1,38 @@
 const defaultRoute = "/?section=calendar";
+const shellCacheName = "my-plan-shell-v1";
+
+async function cacheShell() {
+  const cache = await caches.open(shellCacheName);
+  const response = await fetch("/", { cache: "no-cache" });
+  if (!response.ok) return;
+  await cache.put("/", response.clone());
+  const html = await response.text();
+  const assets = Array.from(html.matchAll(/(?:src|href)="([^"]+)"/g), match => match[1])
+    .filter(path => path && (path.startsWith("/assets/") || path.startsWith("/manus-storage/")));
+  await Promise.all(assets.map(async path => {
+    try {
+      const asset = await fetch(path, { cache: "no-cache" });
+      if (asset.ok) await cache.put(path, asset);
+    } catch {}
+  }));
+}
+
+self.addEventListener("install", event => {
+  event.waitUntil(cacheShell().catch(() => undefined).then(() => self.skipWaiting()));
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith("my-plan-shell-") && key !== shellCacheName).map(key => caches.delete(key)))).then(() => clients.claim()));
+});
+
+self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET" || event.request.mode !== "navigate") return;
+  event.respondWith(fetch(event.request).then(async response => {
+    const cache = await caches.open(shellCacheName);
+    if (response.ok) await cache.put("/", response.clone());
+    return response;
+  }).catch(async () => (await caches.match(event.request)) || (await caches.match("/")) || Response.error()));
+});
 
 function safeRoute(value) {
   if (typeof value !== "string") return defaultRoute;

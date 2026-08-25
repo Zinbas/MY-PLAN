@@ -21,6 +21,7 @@ import {
   sendPushNotification,
 } from "./push";
 import { sdk } from "./_core/sdk";
+import { ENV } from "./_core/env";
 
 const DELIVERY_BATCH_SIZE = 25;
 const STALE_CLAIM_MS = 5 * 60_000;
@@ -106,7 +107,7 @@ export function registerPushRoutes(app: Express) {
       if (error && typeof error === "object" && "statusCode" in error && (error as { statusCode?: unknown }).statusCode === 403) {
         return res.status(403).json({ error: "cron-only" });
       }
-      console.error("[MY PLAN Push] Scheduled delivery failed", error);
+      if (!ENV.isProduction) console.error("[MY PLAN Push] Scheduled delivery failed");
       return res.status(500).json({
         error: "MY PLAN device reminder dispatch failed.",
         context: { taskUid: taskUid ?? null },

@@ -5,20 +5,23 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
-import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
+import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeApplicationSession, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule, scheduleImportFailureMessage } from "./scheduleImport";
 import { createHash, randomBytes } from "node:crypto";
 import { listSparkEvents, replaceSparkAccessToken } from "./db";
 import { createDeliveryKey, encryptPushSubscription, hashPushEndpoint, isAllowedReminderLeadMinutes, isValidQuietHour, normalizePushSubscription, pushReadiness } from "./push";
+import { hashApplicationSession, sessionTokenFromRequest } from "./authSession";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      const sessionToken = sessionTokenFromRequest(ctx.req);
+      if (sessionToken) await revokeApplicationSession(hashApplicationSession(sessionToken));
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {

@@ -4,10 +4,12 @@
  */
 import type { Express, Request, Response } from "express";
 import { buildGoogleAuthorizationUrl, createConnectionState, encryptGoogleCredential, exchangeGoogleAuthorizationCode, getGoogleOAuthConfig, getGoogleProfile, googleOAuthReadiness, googleOAuthSetupPendingResponse, hashOAuthState, isGoogleOAuthConfigured } from "./googleOAuth";
-import { consumeGoogleOAuthState, createGoogleOAuthState, getUserByOpenId, upsertGoogleCalendarConnection, upsertUser } from "./db";
+import { consumeGoogleOAuthState, createApplicationSession, createGoogleOAuthState, getUserByOpenId, upsertGoogleCalendarConnection, upsertUser } from "./db";
 import { sdk } from "./_core/sdk";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, SESSION_TTL_MS } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { hashApplicationSession } from "./authSession";
+import { ENV } from "./_core/env";
 import { getCalendarConnectionById, getLinkedCalendarById, getWatchChannel } from "./db";
 import { importGoogleCalendarConnection, syncGoogleLinkedCalendar } from "./calendarSync";
 import { renewExpiringGoogleWatchChannels } from "./calendarSync";
@@ -60,8 +62,9 @@ export function registerGoogleCalendarRoutes(app: Express) {
         await upsertUser({ openId, name: profile.name ?? null, email: profile.email, loginMethod: "google", lastSignedIn: new Date() });
         const signedInUser = await getUserByOpenId(openId);
         if (!signedInUser) throw new Error("Google user account could not be created");
-        const session = await sdk.createSessionToken(openId, { name: signedInUser.name ?? "Google user" });
-        res.cookie(COOKIE_NAME, session, getSessionCookieOptions(req));
+        const session = await sdk.createSessionToken(openId, { name: signedInUser.name ?? "Google user", expiresInMs: SESSION_TTL_MS });
+        await createApplicationSession({ userId: signedInUser.id, tokenHash: hashApplicationSession(session), expiresAt: new Date(Date.now() + SESSION_TTL_MS) });
+        res.cookie(COOKIE_NAME, session, { ...getSessionCookieOptions(req), maxAge: SESSION_TTL_MS });
         return res.redirect("/?google=signed-in");
       }
       const connection = await upsertGoogleCalendarConnection({
@@ -78,8 +81,8 @@ export function registerGoogleCalendarRoutes(app: Express) {
       const callbackUrl = new URL(configured.redirectUri).origin + "/api/google/webhooks/calendar";
       await importGoogleCalendarConnection(oauthState.userId, connection.id, callbackUrl);
       return res.redirect("/?google=connected");
-    } catch (error) {
-      console.error("[Google OAuth] Callback failed", error);
+    } catch {
+      if (!ENV.isProduction) console.error("[Google OAuth] Callback failed");
       return res.redirect("/?google=error");
     }
   });
@@ -100,8 +103,8 @@ export function registerGoogleCalendarRoutes(app: Express) {
       if (!connection) return res.status(204).end();
       await syncGoogleLinkedCalendar(connection, calendar.id);
       return res.status(204).end();
-    } catch (error) {
-      console.error("[Google Calendar] Webhook sync failed", error);
+    } catch {
+      if (!ENV.isProduction) console.error("[Google Calendar] Webhook sync failed");
       return res.status(500).json({ error: "Google calendar synchronization failed" });
     }
   });
@@ -115,8 +118,8 @@ export function registerGoogleCalendarRoutes(app: Express) {
       const callbackUrl = new URL((config as Required<typeof config>).redirectUri).origin + "/api/google/webhooks/calendar";
       const result = await renewExpiringGoogleWatchChannels(callbackUrl);
       return res.json({ ok: true, ...result });
-    } catch (error) {
-      console.error("[Google Calendar] Watch renewal failed", error);
+    } catch {
+      if (!ENV.isProduction) console.error("[Google Calendar] Watch renewal failed");
       return res.status(500).json({ error: "Calendar watch renewal failed.", timestamp: new Date().toISOString() });
     }
   });

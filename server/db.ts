@@ -1,6 +1,6 @@
-import { and, asc, eq, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, lt, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, personalReminderItems, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
+import { applicationSessions, calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, personalReminderItems, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -10,8 +10,8 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+    } catch {
+      if (!ENV.isProduction) console.warn("[Database] Failed to connect");
       _db = null;
     }
   }
@@ -25,7 +25,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
+    if (!ENV.isProduction) console.warn("[Database] Cannot upsert user: database not available");
     return;
   }
 
@@ -72,7 +72,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       set: updateSet,
     });
   } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
+    if (!ENV.isProduction) console.error("[Database] Failed to upsert user");
     throw error;
   }
 }
@@ -80,13 +80,39 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
+    if (!ENV.isProduction) console.warn("[Database] Cannot get user: database not available");
     return undefined;
   }
 
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createApplicationSession(input: { userId: number; tokenHash: string; expiresAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(applicationSessions).values({ ...input, revokedAt: null, lastSeenAt: new Date() }).onDuplicateKeyUpdate({
+    set: { userId: input.userId, expiresAt: input.expiresAt, revokedAt: null, lastSeenAt: new Date() },
+  });
+}
+
+export async function hasActiveApplicationSession(userId: number, tokenHash: string) {
+  const db = await getDb();
+  if (!db) return false;
+  const session = (await db.select({ id: applicationSessions.id }).from(applicationSessions).where(and(
+    eq(applicationSessions.userId, userId),
+    eq(applicationSessions.tokenHash, tokenHash),
+    isNull(applicationSessions.revokedAt),
+    gt(applicationSessions.expiresAt, new Date()),
+  )).limit(1))[0];
+  return Boolean(session);
+}
+
+export async function revokeApplicationSession(tokenHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(applicationSessions).set({ revokedAt: new Date() }).where(eq(applicationSessions.tokenHash, tokenHash));
 }
 
 export async function createGoogleOAuthState(userId: number | null, stateHash: string, expiresAt: Date) {

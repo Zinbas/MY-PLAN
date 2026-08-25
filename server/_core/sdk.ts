@@ -1,11 +1,11 @@
-import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS, decodeOAuthState } from "@shared/const";
+import { AXIOS_TIMEOUT_MS, SESSION_TTL_MS, decodeOAuthState } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import axios, { type AxiosInstance } from "axios";
-import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
+import { hashApplicationSession, sessionTokenFromRequest } from "../authSession";
 import { ENV } from "./env";
 import type {
   ExchangeTokenRequest,
@@ -30,11 +30,9 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
-      );
+    if (!ENV.isProduction) {
+      console.log("[OAuth] Initialized");
+      if (!ENV.oAuthServerUrl) console.error("[OAuth] OAUTH_SERVER_URL is not configured");
     }
   }
 
@@ -144,15 +142,6 @@ class SDKServer {
     } as GetUserInfoResponse;
   }
 
-  private parseCookies(cookieHeader: string | undefined) {
-    if (!cookieHeader) {
-      return new Map<string, string>();
-    }
-
-    const parsed = parseCookieHeader(cookieHeader);
-    return new Map(Object.entries(parsed));
-  }
-
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
     return new TextEncoder().encode(secret);
@@ -182,7 +171,7 @@ class SDKServer {
     options: { expiresInMs?: number } = {}
   ): Promise<string> {
     const issuedAt = Date.now();
-    const expiresInMs = options.expiresInMs ?? ONE_YEAR_MS;
+    const expiresInMs = options.expiresInMs ?? SESSION_TTL_MS;
     const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
     const secretKey = this.getSessionSecret();
 
@@ -200,7 +189,7 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
+      if (!ENV.isProduction) console.warn("[Auth] Missing session cookie");
       return null;
     }
 
@@ -216,7 +205,7 @@ class SDKServer {
         !isNonEmptyString(appId) ||
         !isNonEmptyString(name)
       ) {
-        console.warn("[Auth] Session payload missing required fields");
+        if (!ENV.isProduction) console.warn("[Auth] Session payload missing required fields");
         return null;
       }
 
@@ -225,8 +214,8 @@ class SDKServer {
         appId,
         name,
       };
-    } catch (error) {
-      console.warn("[Auth] Session verification failed", String(error));
+    } catch {
+      if (!ENV.isProduction) console.warn("[Auth] Session verification failed");
       return null;
     }
   }
@@ -256,19 +245,8 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
-    // 1. Prefer the session cookie (regular OAuth login).
-    const cookies = this.parseCookies(req.headers.cookie);
-    let sessionToken = cookies.get(COOKIE_NAME);
-
-    // 2. Fallback to the Authorization header (Preview auto-login via
-    //    sessionStorage), used when the browser blocks iframe cookies such as
-    //    Safari ITP, private browsing, or iOS/Android WebView.
-    if (!sessionToken) {
-      const authHeader = req.headers.authorization;
-      if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
-        sessionToken = authHeader.slice(7);
-      }
-    }
+    // Prefer the regular session cookie and retain the existing preview bearer fallback.
+    const sessionToken = sessionTokenFromRequest(req);
 
     const session = await this.verifySession(sessionToken);
 
@@ -293,12 +271,8 @@ class SDKServer {
     // signed sessions but cannot be introspected through the Manus OAuth service.
     if (sessionUserId.startsWith("google:")) {
       if (!user) throw ForbiddenError("Google session user not found");
-      await db.upsertUser({ openId: user.openId, lastSignedIn: signedInAt });
-      return user;
-    }
-
-    // If user not in DB, sync from OAuth server automatically
-    if (!user) {
+    } else if (!user) {
+      // If a signed token belongs to a new account, synchronize its public profile once.
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionToken ?? "");
         await db.upsertUser({
@@ -309,14 +283,18 @@ class SDKServer {
           lastSignedIn: signedInAt,
         });
         user = await db.getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
+      } catch {
+        if (!ENV.isProduction) console.error("[Auth] Failed to sync user from OAuth");
         throw ForbiddenError("Failed to sync user info");
       }
     }
 
     if (!user) {
       throw ForbiddenError("User not found");
+    }
+
+    if (!sessionToken || !(await db.hasActiveApplicationSession(user.id, hashApplicationSession(sessionToken)))) {
+      throw ForbiddenError("Session is no longer active");
     }
 
     await db.upsertUser({
