@@ -223,3 +223,8 @@
 .reminder-field select{width:100%;min-height:42px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fffef9;color:var(--ink);font-size:13px}
 .reminder-field select:focus-visible{outline:2px solid var(--olive);outline-offset:2px}
 @media (max-width:820px){.top-actions button:nth-child(4){display:grid;width:36px;min-width:36px;max-width:36px;min-height:36px;padding:0;place-items:center;font-size:0}.top-actions button:nth-child(4) svg{display:block;width:16px;height:16px}.reminder-field{padding:10px}}
+
+/* Reminder composer ergonomics: keep the full editor comfortable on short phone screens. */
+.planner-composer{max-height:calc(100dvh - 28px);overflow-y:auto;overscroll-behavior:contain}
+.planner-composer .reminder-field{margin-top:2px}
+@media (max-width:820px){.dialog-backdrop{align-items:end;padding:8px}.planner-composer{width:100%;max-height:calc(100dvh - 16px);padding:20px 16px 18px;gap:12px;border-radius:18px 18px 10px 10px}.planner-composer h2{font-size:26px}.planner-composer .composer-row{gap:8px}.planner-composer .date-helper{min-height:42px}.planner-composer .reminder-field select{min-height:46px}}

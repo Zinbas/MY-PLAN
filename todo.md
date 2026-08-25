@@ -286,3 +286,6 @@
 - [x] Keep website Profile limited to user identity, account state, and account actions, with administrator controls separate.
 - [x] Correct the website information architecture so Profile is a separate main-navigation section, while Settings and reminders remain inside Workspace.
 - [x] Remove any wording that implies Profile is part of Workspace and revalidate the corrected navigation.
+- [x] Fix the cramped website reminder composer layout and prevent browser autocomplete/spelling UI from obscuring the title field.
+- [x] Add a focused quick-reminder flow with one-tap lead-time choices, while retaining full task/event editing when needed.
+- [x] Validate the easier reminder flow on desktop and compact-phone layouts, then publish the correction.
