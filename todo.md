@@ -299,3 +299,5 @@
 - [x] Remove the cluttered quick-reminder chips and restore the clean reminder selector without removing reminder capabilities.
 - [x] Replace free-text planner date entry with a validated native calendar date picker so letters cannot be entered.
 - [x] Validate the restored composer and date picker on desktop and compact phone, then publish the correction.
+- [x] Remove the unwanted global Add task, Add event, Focus block, and Set reminder quick-actions strip while retaining all underlying actions in their existing planner locations.
+- [x] Validate the cleaner planner header on desktop and compact phone, then publish the removal.
