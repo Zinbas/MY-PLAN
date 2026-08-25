@@ -263,5 +263,5 @@
 - [x] Synchronize the latest verified MY PLAN source and continuous-integration workflow to the user-approved GitHub repository without committing secrets or private planner data.
 - [x] Restore the new-visitor MY PLAN welcome flow so a genuinely new browser sees Sign in or Continue as guest, followed by the optional tutorial choice.
 - [x] Repair the reported desktop calendar header and control collision with the selected-day panel, preserving readable view and filter controls at constrained laptop widths.
-- [ ] Diagnose and repair the failing GitHub Actions MY PLAN quality-check workflow, then verify a successful remote run.
+- [x] Diagnose and repair the failing GitHub Actions MY PLAN quality-check workflow, then verify a successful remote run.
 - [x] Synchronize the present verified MY PLAN welcome-flow and constrained-laptop calendar repairs to GitHub before addressing the workflow failure.
