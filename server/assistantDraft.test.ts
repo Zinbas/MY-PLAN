@@ -51,4 +51,36 @@ describe("MY PLAN Assistant draft safeguards", () => {
   it("keeps an explicit request to create a new planning task available for GPT parsing", () => {
     expect(nonCreationAssistantDraft("Create a task to review my calendar tomorrow")).toBeNull();
   });
+
+  it("keeps varied destructive, account, and delivery requests non-reviewable even with conversational wording", () => {
+    const messages = [
+      "pls delete my tmw event", "remove the old assignment", "cancel that meeting", "edit my revision block",
+      "update the class time", "change tomorrow's task", "move the lab", "duplicate the routine",
+      "mark my homework done", "clear the list", "dismiss this reminder", "archive last week's tasks",
+      "unschedule my focus session", "sync my calendar", "import my timetable", "export my plans",
+      "share the event", "notify everyone about the exam",
+    ];
+
+    for (const message of messages) {
+      const draft = nonCreationAssistantDraft(message);
+      expect(draft, message).not.toBeNull();
+      expect(assistantDraftCanOpenComposer(draft!)).toBe(false);
+      expect(draft?.needsClarification).toBe(true);
+    }
+  });
+
+  it("rejects the invalid date, time, reminder, duration, and clarification edges that must never reach review", () => {
+    const base = {
+      kind: "event", title: "Stress matrix", date: "2026-09-14", time: "09:30", durationMinutes: 60,
+      priority: "normal", course: null, notes: null, reminderLeadMinutes: null, needsClarification: false, clarification: null,
+    } as const;
+    const invalidDrafts = [
+      { ...base, date: "2026-02-30" }, { ...base, date: "14-09-2026" }, { ...base, time: "25:00" },
+      { ...base, time: "9:30" }, { ...base, durationMinutes: 14 }, { ...base, durationMinutes: 721 },
+      { ...base, reminderLeadMinutes: 7 }, { ...base, reminderLeadMinutes: 5, time: null },
+      { ...base, date: null }, { ...base, needsClarification: true, clarification: null },
+    ];
+
+    for (const invalidDraft of invalidDrafts) expect(() => assistantCommandDraftSchema.parse(invalidDraft)).toThrow();
+  });
 });

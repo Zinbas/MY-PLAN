@@ -28,7 +28,9 @@ const assistantResponseSchema = {
 };
 
 const nonCreationActionPattern = /\b(delete|remove|cancel|edit|update|change|modify|rename|reschedule|move|duplicate|complete|mark|clear|dismiss|archive|unschedule|sync|import|export|share|notify)\b/i;
-const explicitCreationPattern = /\b(create|add|plan|schedule|set|remind|block)\b/i;
+// “Block” is also a planner-item noun (for example, “cancel the block”), so it
+// must not be treated as an explicit creation verb that overrides a destructive request.
+const explicitCreationPattern = /\b(create|add|plan|schedule|set|remind)\b/i;
 
 export function nonCreationAssistantDraft(message: string): AssistantCommandDraft | null {
   if (!nonCreationActionPattern.test(message) || explicitCreationPattern.test(message)) return null;
