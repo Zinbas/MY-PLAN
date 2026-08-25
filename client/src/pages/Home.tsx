@@ -13,6 +13,8 @@ import { calendarFilterReasons } from "@/lib/calendarFilterReasons";
 import { isValidImportDate } from "@/lib/importDates";
 import { readComposerDateTime } from "@/lib/composerDateTime";
 import { syncCalendarStatus } from "@/lib/syncStatus";
+import type { AssistantCommandDraft } from "@shared/assistantDraft";
+import { assistantDraftCanOpenComposer } from "@shared/assistantDraft";
 import { mapSelectedImportCandidates } from "@/lib/importSelection";
 import { applyOptimisticCalendarSelection } from "@/lib/calendarSelectionOptimistic";
 import { calendarSelectionSaveMessage } from "@/lib/calendarSelectionFeedback";
@@ -24,6 +26,7 @@ import { onTimeCompletionStats, recentCompletedTasks, sortTodoTasks, weeklyActiv
 import { deadlineCues, deadlineLabel } from "@/lib/planningContext";
 import { personalReminderCandidates } from "@/lib/personalReminderEnrollment";
 import WorkspaceTools from "./WorkspaceTools";
+import AssistantWorkspace from "./AssistantWorkspace";
 import ReminderWorkspace from "./ReminderWorkspace";
 import PlannerSidebar from "./PlannerSidebar";
 import CalendarConnectionPicker from "./CalendarConnectionPicker";
@@ -149,6 +152,8 @@ export default function Home() {
   const [draftNotes, setDraftNotes] = useState("");
   const [draftScheduleTask, setDraftScheduleTask] = useState(true);
   const [draftReminderLeadMinutes, setDraftReminderLeadMinutes] = useState<number | "">("");
+  const [assistantMessage, setAssistantMessage] = useState("");
+  const [assistantDraft, setAssistantDraft] = useState<AssistantCommandDraft | null>(null);
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
   const [welcomeRetired, setWelcomeRetired] = useState(() => Boolean(localStorage.getItem("my-plan-welcome-retired")));
@@ -280,6 +285,10 @@ export default function Home() {
     },
     onError: error => setImportMessage(error.message || "The file could not be scanned. Please try a supported file under 10 MB."),
   });
+  const assistantDraftMutation = trpc.assistant.draft.useMutation({
+    onSuccess: draft => setAssistantDraft(draft),
+    onError: error => setToast(error.message || "MY PLAN Assistant could not prepare that draft."),
+  });
   const activeStart = view === "week" ? startOfWeek(selectedDate) : view === "agenda" ? new Date() : monthStart(cursor);
   const activeEnd = view === "week" ? addDays(activeStart, 7) : view === "agenda" ? addDays(new Date(), 30) : addMonths(monthStart(cursor), 1);
   const blocks = useMemo(() => plannerBlocks.flatMap(block => expandRepeatingBlock(block, addMonths(activeStart, -1), addMonths(activeEnd, 1))), [plannerBlocks, activeStart, activeEnd]);
@@ -380,6 +389,29 @@ export default function Home() {
   const resetDraft = (kind: ComposerKind, date = selectedDate, enableReminder = false) => { setComposerKind(kind); setEditingId(null); setDraftTitle(""); setDraftDate(dateKey(date)); setDraftTime(""); setDraftDuration("60"); setDraftRepeat("none"); setDraftPriority("normal"); setDraftCourse(""); setDraftNotes(""); setDraftScheduleTask(true); setDraftReminderLeadMinutes(enableReminder ? 10 : ""); };
   const openComposerForDate = (kind: ComposerKind, date: Date, enableReminder = false) => { closePopovers(); setDateContextMenu(null); setMobileDateAction(null); setSelectedDate(date); setCursor(monthStart(date)); setSection("calendar"); resetDraft(kind, date, enableReminder); setShowComposer(true); };
   const openComposer = (kind: ComposerKind, enableReminder = false) => { openComposerForDate(kind, selectedDate, enableReminder); };
+  const askAssistant = () => {
+    const message = assistantMessage.trim();
+    if (message.length < 3) return setToast("Tell MY PLAN what you want to plan first.");
+    assistantDraftMutation.mutate({ message, referenceDate: dateKey(new Date()), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" });
+  };
+  const reviewAssistantDraft = () => {
+    if (!assistantDraft || !assistantDraftCanOpenComposer(assistantDraft) || !assistantDraft.date) return;
+    const date = new Date(`${assistantDraft.date}T12:00:00`);
+    resetDraft(assistantDraft.kind, date);
+    setDraftTitle(assistantDraft.title);
+    setDraftTime(assistantDraft.time ?? "");
+    setDraftDuration(String(assistantDraft.durationMinutes ?? 60));
+    setDraftPriority(assistantDraft.priority);
+    setDraftCourse(assistantDraft.course ?? "");
+    setDraftNotes(assistantDraft.notes ?? "");
+    setDraftScheduleTask(Boolean(assistantDraft.time));
+    setDraftReminderLeadMinutes(assistantDraft.reminderLeadMinutes ?? "");
+    setSelectedDate(date);
+    setCursor(monthStart(date));
+    setSection("calendar");
+    setShowComposer(true);
+    setToast("Review the draft, then choose Save to add it to MY PLAN.");
+  };
   const closeComposer = () => { setShowComposer(false); setEditingId(null); setRecurringEditTarget(null); };
   const announceConflicts = (title: string, candidate: PlannerBlock, additional: PlannerBlock[] = []) => {
     const conflicts = findTimeConflicts(candidate, [...allCalendarBlocks, ...additional]);
@@ -551,6 +583,7 @@ export default function Home() {
       {section === "progress" ? <section className="planning-workspace progress-workspace"><header className="workspace-heading"><div><p className="kicker"><BarChart3 size={15} /> Honest progress</p><h1>Notice the work that moved.</h1><p>MY PLAN only counts completed tasks and focus blocks. No arbitrary score, no streak pressure—just the work you recorded.</p></div><button onClick={() => openSection("todo")}><ListTodo size={15} /> Review tasks</button></header><div className="progress-summary"><article className="progress-feature"><span>Today</span><strong>{todayTasks.filter(isTaskComplete).length} / {todayTasks.length}</strong><p>tasks complete today</p><div className="progress-track"><i style={{ width: `${todayTasks.length ? Math.round((todayTasks.filter(isTaskComplete).length / todayTasks.length) * 100) : 0}%` }} /></div></article><article><span>Completed</span><strong>{completedTasks.length}</strong><p>tasks in your plan</p></article><article><span>Focus blocks</span><strong>{blocks.filter(block => block.completed && block.startAt >= addDays(new Date(), -6)).length}</strong><p>completed this week</p></article><article><span>Upcoming</span><strong>{upcomingTaskCount}</strong><p>deadlines in 7 days</p></article></div><section className="week-activity"><div className="list-progress-heading"><div><p className="kicker"><BarChart3 size={14} /> Seven-day record</p><h2>What you completed and focused</h2></div><span>{weeklyCompletedTasks} task{weeklyCompletedTasks === 1 ? "" : "s"} · {weeklyFocusMinutes} min focused</span></div><p>Each day reflects only completed tasks with a saved completion time and focus blocks you marked done.</p><div className="week-activity-grid">{weekActivity.map(day => <article key={dateKey(day.date)}><time>{new Intl.DateTimeFormat("en-US", { weekday: "short" }).format(day.date)}</time><strong>{day.completedTasks}</strong><span>task{day.completedTasks === 1 ? "" : "s"}</span><small>{day.focusMinutes ? `${day.focusMinutes} min focus` : "—"}</small></article>)}</div></section><section className="completion-insights"><article><p className="kicker"><Check size={14} /> Due-date record</p><h2>Finished on time</h2><strong>{onTimeStats.onTime} / {onTimeStats.timestamped}</strong><p>{onTimeStats.timestamped ? "completed tasks were finished by their recorded due time." : "This appears once a completed task has a saved completion time."}</p></article><article><p className="kicker"><ListChecks size={14} /> Recent completions</p><h2>Proof of progress</h2>{recentCompletions.length ? <ul>{recentCompletions.map(task => <li key={task.id}><span><b>{task.title}</b><small>{task.course}</small></span><time>{formatShort(task.completedAt!)}</time></li>)}</ul> : <p>Complete a task to create a dated record here.</p>}</article></section><section className="list-progress"><div className="list-progress-heading"><div><p className="kicker"><ListChecks size={14} /> List progress</p><h2>Where your effort is going</h2></div><span>{listProgress.length} active list{listProgress.length === 1 ? "" : "s"}</span></div>{listProgress.length ? listProgress.map(list => <article key={list.list}><div><strong>{list.list}</strong><span>{list.done} of {list.total} complete</span></div><div className="progress-track"><i style={{ width: `${list.percent}%` }} /></div><b>{list.percent}%</b></article>) : <div className="todo-empty"><BarChart3 size={22} /><strong>Progress starts with one task.</strong><p>Add a task to see real list and daily completion signals here.</p><button onClick={() => openComposer("task")}>Add a task</button></div>}</section></section> : null}
       {section === "progress" && upcomingDeadlineCues.length ? <section className="deadline-context" aria-label="Upcoming course or project deadlines"><div><p className="kicker"><Flag size={14} /> Upcoming context</p><h2>Next course or project deadlines</h2></div><div>{upcomingDeadlineCues.map(cue => <article key={`${cue.course}-${cue.title}`}><strong>{cue.course}</strong><span>{cue.title}</span><small>{deadlineLabel(cue.daysAway)} · {formatShort(cue.dueAt)}</small></article>)}</div></section> : null}
       {section === "profile" ? <section className="workspace-card profile-workspace" aria-label="Profile"><header className="workspace-heading"><div><p className="kicker"><UserRound size={15} /> Profile</p><h1>Your MY PLAN account.</h1><p>Keep your identity and account actions here. Planning settings live inside Workspace tools.</p></div></header>{isAuthenticated ? <div className="profile-card"><div className="profile-avatar"><UserRound size={24} /></div><div><strong>{user?.name || "MY PLAN account"}</strong><span>{user?.email || "Signed in and ready"}</span><small>Your account keeps connected services private to you.</small></div><button onClick={() => void logout()}><LogOut size={14} /> Sign out</button></div> : <div className="profile-card signed-out"><div className="profile-avatar"><UserRound size={24} /></div><div><strong>Plan locally or sign in when ready.</strong><span>This browser is using a local MY PLAN workspace.</span><small>Sign in to connect calendars and use account-only tools.</small></div><button className="accent" onClick={() => startLogin()}><LogIn size={14} /> Sign in</button></div>}<div className="profile-links"><button onClick={() => openSection("accounts")}><CirclePlus size={16} /><span><strong>Account & calendar</strong><small>Manage connected calendar access separately.</small></span><ArrowRight size={15} /></button></div></section> : null}
+      {section === "assistant" ? <AssistantWorkspace value={assistantMessage} draft={assistantDraft} isWorking={assistantDraftMutation.isPending} onChange={value => { setAssistantMessage(value); setAssistantDraft(null); }} onAsk={askAssistant} onUseExample={value => { setAssistantMessage(value); setAssistantDraft(null); }} onReview={reviewAssistantDraft} /> : null}
       {section === "tools" ? <WorkspaceTools onOpen={openSection} isAuthenticated={isAuthenticated} onSignIn={() => startLogin()} /> : null}
       {section === "settings" ? <section className="workspace-card settings-workspace" aria-label="Workspace settings"><header className="workspace-heading"><div><p className="kicker"><Settings2 size={15} /> Workspace settings</p><h1>Set MY PLAN up your way.</h1><p>Reminders, notifications, connected services, and import utilities belong here—not inside your profile.</p></div><button onClick={() => openSection("profile")}><UserRound size={15} /> Open Profile</button></header><div className="settings-grid"><article><p className="kicker"><Bell size={14} /> Reminders</p><h2>Never miss the next thing.</h2><p>Choose device reminder timing and explicitly enable delivery for this workspace.</p><button className="accent" onClick={() => openSection("reminders")}><Bell size={15} /> Manage reminders</button></article><article><p className="kicker"><Bell size={14} /> In-app notices</p><h2>Keep attention calm.</h2><p>Control the private notification center without requesting device permission.</p><button onClick={() => setShowNotifications(true)}><Bell size={15} /> Open notification center</button></article><article><p className="kicker"><CirclePlus size={14} /> Connections</p><h2>Connected calendars stay yours.</h2><p>Review account-linked calendars and choose which of your own calendars MY PLAN can show.</p><button onClick={() => openSection("accounts")}><CirclePlus size={15} /> Account & calendar</button></article><article><p className="kicker"><Upload size={14} /> Planning tools</p><h2>Bring in a schedule safely.</h2><p>Import files into an editable review before anything enters your private plan.</p><button onClick={() => openSection("import")}><Upload size={15} /> Import schedule</button></article></div></section> : null}
       {section === "reminders" ? <ReminderWorkspace isAuthenticated={isAuthenticated} personalReminderCandidates={upcomingPersonalReminderCandidates} onSignIn={() => startLogin()} onOpenCalendar={() => setShowNotifications(true)} /> : null}

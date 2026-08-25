@@ -5,6 +5,7 @@ export const sensitiveRouteLimits = {
   oauthCallback: { windowMs: 15 * 60_000, max: 30 },
   mcp: { windowMs: 60_000, max: 120 },
   scheduleExtract: { windowMs: 15 * 60_000, max: 6 },
+  assistantDraft: { windowMs: 5 * 60_000, max: 20 },
 } as const;
 
 function limitMessage(res: Response) {

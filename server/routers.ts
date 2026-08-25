@@ -13,6 +13,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { listSparkEvents, replaceSparkAccessToken } from "./db";
 import { createDeliveryKey, encryptPushSubscription, hashPushEndpoint, isAllowedReminderLeadMinutes, isValidQuietHour, normalizePushSubscription, pushReadiness } from "./push";
 import { hashApplicationSession, sessionTokenFromRequest } from "./authSession";
+import { draftAssistantCommand } from "./assistant";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -76,6 +77,19 @@ export const appRouter = router({
       const token = `myplan_${randomBytes(32).toString("base64url")}`;
       await replaceSparkAccessToken(ctx.user.id, createHash("sha256").update(token).digest("hex"));
       return { token };
+    }),
+  }),
+  assistant: router({
+    draft: publicProcedure.input(z.object({
+      message: z.string().trim().min(3).max(800),
+      referenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      timeZone: z.string().trim().min(1).max(120),
+    })).mutation(async ({ input }) => {
+      try {
+        return await draftAssistantCommand(input);
+      } catch {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "MY PLAN Assistant could not prepare that draft. Try a clearer request with a date." });
+      }
     }),
   }),
   schedule: router({

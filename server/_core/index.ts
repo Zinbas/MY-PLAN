@@ -47,6 +47,7 @@ async function startServer() {
   app.use("/api/oauth/callback", sensitiveRateLimit(sensitiveRouteLimits.oauthCallback));
   app.use("/api/mcp", sensitiveRateLimit(sensitiveRouteLimits.mcp));
   app.use("/api/trpc/schedule.extract", sensitiveRateLimit(sensitiveRouteLimits.scheduleExtract));
+  app.use("/api/trpc/assistant.draft", sensitiveRateLimit(sensitiveRouteLimits.assistantDraft));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerGoogleCalendarRoutes(app);

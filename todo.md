@@ -310,3 +310,8 @@
 - [x] Repeat tests, type checks, production build, whitespace checks, diagnostics review, and responsive screenshots until the audited release is stable.
 - [x] Widen the planner composer at compact desktop widths so its form fields and action labels remain comfortably readable without waiting for the phone breakpoint.
 - [x] Correct the signed-out Sync Center status so it does not imply that calendar import is ready before the user can sign in and connect an account.
+- [x] Keep Gemini Spark hidden from normal MY PLAN navigation while preserving it as an advanced internal connection route.
+- [x] Add a secure GPT-backed MY PLAN Assistant parser that converts natural-language requests, including minor typos and planning slang, into validated task, event, focus-block, and optional reminder drafts without writing planner data.
+- [x] Add a reviewed assistant interface that requires explicit user confirmation before it uses existing planner save paths.
+- [x] Add regression coverage for assistant parsing, common slang and minor typos, confirmation-only behavior, invalid dates, optional time, and optional reminders.
+- [x] Validate the MY PLAN Assistant on desktop and compact phone, then publish the reviewed-action workflow.
