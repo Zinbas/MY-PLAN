@@ -321,3 +321,11 @@
 - [ ] Probe MY PLAN Assistant transport, structured validation, and rate-limit boundaries safely; fix and retest every reproducible issue before user testing.
 - [x] Prevent destructive, edit, sync, or send commands from being represented as a planner draft; require a clear Assistant clarification instead.
 - [x] Verify that an Assistant command alone creates no task, event, focus block, reminder enrollment, calendar change, or notification; only the existing final Save action may create the reviewed planner item.
+- [x] Require an exact time for every MY PLAN Assistant draft with a reminder lead time; ask “Before what time?” rather than allowing a date-only reminder draft.
+- [x] Test date-only planning, valid timed reminders, and missing-time reminder clarification without creating planner data.
+- [x] Add a consent-gated in-app due-reminder popup with a gentle ring, Dismiss, and Snooze 5 minutes controls; never play sound or show a delivery popup before the user explicitly enables reminders.
+- [x] Validate popup dismissal, five-minute snooze, sound safeguards, and existing browser/device reminder behavior without sending test notifications.
+- [x] Add a compact MY PLAN Assistant icon on Calendar, To-do, Progress, and Profile only; exclude Workspace tools and Admin panel.
+- [x] Preserve saved task and personal-event reminder lead times when preparing in-app due-reminder candidates.
+- [x] Show a clear Enabled status in Workspace immediately after a user turns on in-app reminder popups, including whether the gentle ring is enabled.
+- [x] Repair the current in-app reminder runtime issue and verify that enablement status remains accurate after reload and scope changes.

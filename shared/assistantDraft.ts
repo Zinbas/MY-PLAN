@@ -24,6 +24,7 @@ export const assistantCommandDraftSchema = z.object({
   clarification: z.string().trim().max(240).nullable(),
 }).superRefine((draft, context) => {
   if (!draft.needsClarification && !draft.date) context.addIssue({ code: z.ZodIssueCode.custom, path: ["date"], message: "A date is required before this draft can be reviewed." });
+  if (!draft.needsClarification && draft.reminderLeadMinutes !== null && !draft.time) context.addIssue({ code: z.ZodIssueCode.custom, path: ["time"], message: "An exact time is required for a lead-time reminder." });
   if (draft.needsClarification && !draft.clarification) context.addIssue({ code: z.ZodIssueCode.custom, path: ["clarification"], message: "Explain what needs clarification." });
 });
 
@@ -38,5 +39,5 @@ export const assistantDraftInputSchema = z.object({
 export type AssistantDraftInput = z.infer<typeof assistantDraftInputSchema>;
 
 export function assistantDraftCanOpenComposer(draft: AssistantCommandDraft) {
-  return !draft.needsClarification && Boolean(draft.date);
+  return !draft.needsClarification && Boolean(draft.date) && !(draft.reminderLeadMinutes !== null && !draft.time);
 }

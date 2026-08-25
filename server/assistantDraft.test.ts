@@ -17,6 +17,21 @@ describe("MY PLAN Assistant draft safeguards", () => {
     expect(assistantDraftCanOpenComposer(draft)).toBe(true);
   });
 
+  it("requires an exact time before a lead-time reminder can be reviewed", () => {
+    expect(() => assistantCommandDraftSchema.parse({
+      kind: "event", title: "Physics test", date: "2026-09-14", time: null, durationMinutes: null,
+      priority: "normal", course: null, notes: null, reminderLeadMinutes: 5, needsClarification: false, clarification: null,
+    })).toThrow(/exact time/i);
+  });
+
+  it("keeps an untimed reminder request as a non-reviewable clarification", () => {
+    const draft = assistantCommandDraftSchema.parse({
+      kind: "event", title: "Physics test", date: "2026-09-14", time: null, durationMinutes: null,
+      priority: "normal", course: null, notes: null, reminderLeadMinutes: 5, needsClarification: true, clarification: "Five minutes before what time?",
+    });
+    expect(assistantDraftCanOpenComposer(draft)).toBe(false);
+  });
+
   it("prevents a vague request from opening the composer before clarification", () => {
     const draft = assistantCommandDraftSchema.parse({
       kind: "event", title: "Revision", date: null, time: null, durationMinutes: null,

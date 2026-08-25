@@ -3,3 +3,7 @@ export type PlannerSection = "welcome" | "calendar" | "todo" | "progress" | "too
 export function isWorkspaceToolsSection(section: PlannerSection) {
   return section === "tools" || section === "settings" || section === "accounts" || section === "sync" || section === "import" || section === "spark" || section === "assistant" || section === "reminders";
 }
+
+export function showsAssistantShortcut(section: PlannerSection) {
+  return section === "calendar" || section === "todo" || section === "progress" || section === "profile";
+}
