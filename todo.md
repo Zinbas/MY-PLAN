@@ -329,3 +329,4 @@
 - [x] Preserve saved task and personal-event reminder lead times when preparing in-app due-reminder candidates.
 - [x] Show a clear Enabled status in Workspace immediately after a user turns on in-app reminder popups, including whether the gentle ring is enabled.
 - [x] Repair the current in-app reminder runtime issue and verify that enablement status remains accurate after reload and scope changes.
+- [x] Compare the latest MY PLAN published commit and tracked file set with GitHub main, then synchronize every missing committed source file.
