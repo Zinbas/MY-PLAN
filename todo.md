@@ -315,3 +315,5 @@
 - [x] Add a reviewed assistant interface that requires explicit user confirmation before it uses existing planner save paths.
 - [x] Add regression coverage for assistant parsing, common slang and minor typos, confirmation-only behavior, invalid dates, optional time, and optional reminders.
 - [x] Validate the MY PLAN Assistant on desktop and compact phone, then publish the reviewed-action workflow.
+- [x] Independently run representative MY PLAN Assistant commands for task, event, focus block, date-only planning, optional reminder, minor typo/slang, and unclear-date clarification without saving planner data.
+- [x] Repair every reproducible Assistant parsing or review-safety issue found, then repeat the affected commands before requesting user testing.
