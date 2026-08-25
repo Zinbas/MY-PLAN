@@ -220,7 +220,7 @@
 - [x] Add purposeful, responsive animations for primary navigation, workspace changes, calendar actions, panels, cards, and feedback while respecting reduced-motion preferences.
 - [x] Add regression and visual checks for deployment startup and the calibrated animation experience.
 - [x] Add a slightly more expressive, reduced-motion-aware micro-interaction layer for active navigation, calendar dates, notification feedback, and action completion without increasing visual clutter.
-- [ ] Add user-controlled reminder timing rules and delivery preferences for MY PLAN items while keeping browser push strictly optional.
+- [x] Add user-controlled reminder timing rules and delivery preferences for MY PLAN items while keeping browser push strictly optional.
 - [ ] Prepare Google Calendar reminder delivery so users receive off-app notifications after secure OAuth activation and selected-calendar approval.
 - [x] Add reminder-preference regression coverage and document the secure off-app reminder activation requirements.
 - [x] Build native opt-in MY PLAN web-push subscriptions, per-user reminder timing, quiet hours, and user-controlled disable/retry behavior.
@@ -263,3 +263,5 @@
 - [x] Synchronize the latest verified MY PLAN source and continuous-integration workflow to the user-approved GitHub repository without committing secrets or private planner data.
 - [x] Restore the new-visitor MY PLAN welcome flow so a genuinely new browser sees Sign in or Continue as guest, followed by the optional tutorial choice.
 - [x] Repair the reported desktop calendar header and control collision with the selected-day panel, preserving readable view and filter controls at constrained laptop widths.
+- [ ] Diagnose and repair the failing GitHub Actions MY PLAN quality-check workflow, then verify a successful remote run.
+- [ ] Synchronize the present verified MY PLAN welcome-flow and constrained-laptop calendar repairs to GitHub before addressing the workflow failure.
