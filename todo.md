@@ -301,3 +301,7 @@
 - [x] Validate the restored composer and date picker on desktop and compact phone, then publish the correction.
 - [x] Remove the unwanted global Add task, Add event, Focus block, and Set reminder quick-actions strip while retaining all underlying actions in their existing planner locations.
 - [x] Validate the cleaner planner header on desktop and compact phone, then publish the removal.
+- [x] Make the composer date mandatory through a native calendar picker that prevents free-text alphabetic entry.
+- [x] Make time optional for new tasks, events, and focus blocks while preserving valid date-only saves.
+- [x] Keep reminders optional inside the composer and remove the redundant top-bar Reminder action.
+- [x] Validate date-only, timed, reminder-enabled, desktop, and compact-phone composer flows before publishing.

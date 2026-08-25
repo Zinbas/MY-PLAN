@@ -24,6 +24,13 @@ describe("global time conflict detection", () => {
     expect(findTimeConflicts(base, [recurringOccurrence])).toEqual([]);
   });
 
+  it("does not treat a date-only plan as a timed conflict", () => {
+    const dateOnly = { ...block("date-only", "2026-09-01T09:00:00", "2026-09-01T10:00:00"), hasTime: false };
+    const timed = block("timed", "2026-09-01T09:30:00", "2026-09-01T10:30:00");
+    expect(findTimeConflicts(dateOnly, [timed])).toEqual([]);
+    expect(findTimeConflicts(timed, [dateOnly])).toEqual([]);
+  });
+
   it("precomputes overlap counts once for every calendar item", () => {
     const first = block("first", "2026-09-01T10:00:00", "2026-09-01T11:00:00");
     const second = block("second", "2026-09-01T10:30:00", "2026-09-01T11:30:00");

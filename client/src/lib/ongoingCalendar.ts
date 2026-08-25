@@ -16,6 +16,7 @@ export type PlannerBlock = {
   excludedDates?: string[];
   checklist?: { id: string; label: string; done: boolean }[];
   reminderLeadMinutes?: number;
+  hasTime?: boolean;
 };
 
 export type PersonalEvent = {
@@ -27,6 +28,7 @@ export type PersonalEvent = {
   course: string;
   notes: string;
   reminderLeadMinutes?: number;
+  hasTime?: boolean;
 };
 
 export type PlanTask = {
@@ -67,6 +69,7 @@ export const daysInMonth = (cursor: Date) => {
 export const isWithin = (event: PlannerBlock, start: Date, end: Date) => event.endAt >= start && event.startAt < end;
 const rootId = (id: string) => id.split(":")[0];
 export const findTimeConflicts = (event: PlannerBlock, allEvents: PlannerBlock[]): TimeConflict[] => allEvents.flatMap(other => {
+  if (event.hasTime === false || other.hasTime === false) return [];
   if (rootId(other.id) === rootId(event.id) || event.startAt >= other.endAt || event.endAt <= other.startAt) return [];
   const overlapMinutes = Math.max(1, Math.round((Math.min(event.endAt.getTime(), other.endAt.getTime()) - Math.max(event.startAt.getTime(), other.startAt.getTime())) / 60_000));
   return [{ item: other, overlapMinutes }];
