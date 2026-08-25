@@ -45,6 +45,7 @@ async function startServer() {
   app.use(express.json({ limit: "15mb" }));
   app.use(express.urlencoded({ limit: "16kb", extended: false }));
   app.use("/api/oauth/callback", sensitiveRateLimit(sensitiveRouteLimits.oauthCallback));
+  app.use("/api/mobile/oauth", sensitiveRateLimit(sensitiveRouteLimits.oauthCallback));
   app.use("/api/mcp", sensitiveRateLimit(sensitiveRouteLimits.mcp));
   app.use("/api/trpc/schedule.extract", sensitiveRateLimit(sensitiveRouteLimits.scheduleExtract));
   registerStorageProxy(app);

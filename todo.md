@@ -265,3 +265,8 @@
 - [x] Repair the reported desktop calendar header and control collision with the selected-day panel, preserving readable view and filter controls at constrained laptop widths.
 - [x] Diagnose and repair the failing GitHub Actions MY PLAN quality-check workflow, then verify a successful remote run.
 - [x] Synchronize the present verified MY PLAN welcome-flow and constrained-laptop calendar repairs to GitHub before addressing the workflow failure.
+- [ ] Recover and re-verify the interrupted mobile-first planner redesign and Capacitor Android scaffold after the sandbox reset, without altering private planner or calendar data.
+- [x] Add direct contextual Reminder actions to existing task, event, and focus-block cards while preserving each item’s existing reminder lead when edited.
+- [x] Implement secure native Android sign-in/session handoff and native notification subscription readiness without placing tokens or Firebase credentials in the client.
+- [x] Build and inspect a genuinely installable MY PLAN Android debug APK with API 36 tooling, then document the release-signing, app-link, and Firebase owner configuration prerequisites.
+- [ ] Re-run unit, type, production-build, desktop, and compact-phone checks; checkpoint the recovered work and synchronize the secret-free source to GitHub.

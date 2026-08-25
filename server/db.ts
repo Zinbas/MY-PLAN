@@ -1,6 +1,6 @@
 import { and, asc, eq, gt, gte, inArray, isNull, lt, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { applicationSessions, calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, personalReminderItems, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
+import { applicationSessions, calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, nativeOAuthHandoffs, nativePushSubscriptions, personalReminderItems, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,6 +89,12 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  return (await db.select().from(users).where(eq(users.id, userId)).limit(1))[0];
+}
+
 export async function createApplicationSession(input: { userId: number; tokenHash: string; expiresAt: Date }) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -113,6 +119,31 @@ export async function revokeApplicationSession(tokenHash: string) {
   const db = await getDb();
   if (!db) return;
   await db.update(applicationSessions).set({ revokedAt: new Date() }).where(eq(applicationSessions.tokenHash, tokenHash));
+}
+
+export async function createNativeOAuthHandoff(input: { codeHash: string; verifierHash: string; userId: number; expiresAt: Date }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(nativeOAuthHandoffs).values({ ...input, consumedAt: null });
+}
+
+/** Atomically consumes a short-lived code only when its app-held verifier matches. */
+export async function consumeNativeOAuthHandoff(codeHash: string, verifierHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const handoff = (await db.select().from(nativeOAuthHandoffs).where(and(
+    eq(nativeOAuthHandoffs.codeHash, codeHash),
+    eq(nativeOAuthHandoffs.verifierHash, verifierHash),
+    isNull(nativeOAuthHandoffs.consumedAt),
+    gt(nativeOAuthHandoffs.expiresAt, new Date()),
+  )).limit(1))[0];
+  if (!handoff) return undefined;
+  const result = await db.update(nativeOAuthHandoffs).set({ consumedAt: new Date() }).where(and(
+    eq(nativeOAuthHandoffs.id, handoff.id),
+    isNull(nativeOAuthHandoffs.consumedAt),
+  ));
+  const affectedRows = Number((result as unknown as [{ affectedRows?: number }])[0]?.affectedRows ?? 0);
+  return affectedRows ? handoff : undefined;
 }
 
 export async function createGoogleOAuthState(userId: number | null, stateHash: string, expiresAt: Date) {
@@ -475,6 +506,40 @@ export async function revokeAllOwnedPushSubscriptions(userId: number) {
   await db.update(pushSubscriptions).set({ status: "revoked", encryptedSubscription: "", lastError: null }).where(eq(pushSubscriptions.userId, userId));
 }
 
+export async function upsertNativePushSubscription(input: { userId: number; tokenHash: string; encryptedToken: string; deviceLabel: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.insert(nativePushSubscriptions).values({ ...input, platform: "android", status: "active", lastError: null }).onDuplicateKeyUpdate({
+    set: { userId: input.userId, encryptedToken: input.encryptedToken, deviceLabel: input.deviceLabel, status: "active", lastError: null },
+  });
+  return (await db.select().from(nativePushSubscriptions).where(eq(nativePushSubscriptions.tokenHash, input.tokenHash)).limit(1))[0];
+}
+
+export async function listOwnedNativePushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select({ id: nativePushSubscriptions.id, status: nativePushSubscriptions.status, platform: nativePushSubscriptions.platform, deviceLabel: nativePushSubscriptions.deviceLabel, createdAt: nativePushSubscriptions.createdAt, updatedAt: nativePushSubscriptions.updatedAt })
+    .from(nativePushSubscriptions).where(eq(nativePushSubscriptions.userId, userId));
+}
+
+export async function listActiveNativePushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return db.select().from(nativePushSubscriptions).where(and(eq(nativePushSubscriptions.userId, userId), eq(nativePushSubscriptions.status, "active")));
+}
+
+export async function revokeOwnedNativePushSubscription(userId: number, subscriptionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(nativePushSubscriptions).set({ status: "revoked", encryptedToken: "", lastError: null }).where(and(eq(nativePushSubscriptions.userId, userId), eq(nativePushSubscriptions.id, subscriptionId)));
+}
+
+export async function revokeAllOwnedNativePushSubscriptions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await db.update(nativePushSubscriptions).set({ status: "revoked", encryptedToken: "", lastError: null }).where(eq(nativePushSubscriptions.userId, userId));
+}
+
 export async function upsertPushReminderDelivery(input: {
   userId: number;
   deliveryKey: string;
@@ -505,6 +570,7 @@ export type PersonalReminderEnrollmentInput = {
   body: string;
   targetSection: "calendar" | "todo";
   occursAt: Date;
+  leadMinutes: number | null;
   deliveryKey: string;
   scheduledAt: Date;
 };
@@ -524,13 +590,13 @@ export async function syncOwnedPersonalReminderItems(userId: number, items: Pers
   const stale = existing.filter(item => !incomingSources.has(`${item.sourceKind}:${item.sourceId}`));
   const itemsToSchedule = items.filter(item => {
     const current = existingBySource.get(`${item.sourceKind}:${item.sourceId}`);
-    return !current || current.deliveryKey !== item.deliveryKey || current.title !== item.title || current.body !== item.body || current.targetSection !== item.targetSection || current.occursAt.getTime() !== item.occursAt.getTime();
+    return !current || current.deliveryKey !== item.deliveryKey || current.title !== item.title || current.body !== item.body || current.targetSection !== item.targetSection || current.occursAt.getTime() !== item.occursAt.getTime() || current.leadMinutes !== item.leadMinutes;
   });
 
   for (const item of items) {
     const { scheduledAt: _scheduledAt, ...record } = item;
     await db.insert(personalReminderItems).values({ userId, ...record, isActive: true }).onDuplicateKeyUpdate({
-      set: { title: item.title, body: item.body, targetSection: item.targetSection, occursAt: item.occursAt, deliveryKey: item.deliveryKey, isActive: true },
+      set: { title: item.title, body: item.body, targetSection: item.targetSection, occursAt: item.occursAt, leadMinutes: item.leadMinutes, deliveryKey: item.deliveryKey, isActive: true },
     });
   }
   if (stale.length) {

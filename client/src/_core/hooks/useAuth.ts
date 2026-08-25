@@ -4,6 +4,7 @@ import { shouldBlockAuthPresentation } from "@/lib/authPresentation";
 import { EXTERNAL_AUTH_PENDING_KEY, shouldRefreshAfterExternalAuth } from "@/lib/externalAuthRefresh";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
+import { clearNativeSession } from "@/lib/nativeSession";
 import { useCallback, useEffect, useMemo } from "react";
 
 type UseAuthOptions = {
@@ -70,6 +71,7 @@ export function useAuth(options?: UseAuthOptions) {
       try {
         sessionStorage.removeItem("manus-cookie");
       } catch {}
+      await clearNativeSession().catch(() => undefined);
       utils.auth.me.setData(undefined, null);
       utils.calendar.connections.setData(undefined, []);
       void utils.auth.me.invalidate();

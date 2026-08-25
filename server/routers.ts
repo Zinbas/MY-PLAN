@@ -5,13 +5,13 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
-import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeApplicationSession, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
+import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedNativePushSubscriptions, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedNativePushSubscriptions, revokeAllOwnedPushSubscriptions, revokeApplicationSession, revokeOwnedNativePushSubscription, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertNativePushSubscription, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule, scheduleImportFailureMessage } from "./scheduleImport";
 import { createHash, randomBytes } from "node:crypto";
 import { listSparkEvents, replaceSparkAccessToken } from "./db";
-import { createDeliveryKey, encryptPushSubscription, hashPushEndpoint, isAllowedReminderLeadMinutes, isValidQuietHour, normalizePushSubscription, pushReadiness } from "./push";
+import { createDeliveryKey, encryptNativePushToken, encryptPushSubscription, hashNativePushToken, hashPushEndpoint, isAllowedReminderLeadMinutes, isValidQuietHour, normalizePushSubscription, pushReadiness } from "./push";
 import { hashApplicationSession, sessionTokenFromRequest } from "./authSession";
 
 export const appRouter = router({
@@ -107,6 +107,7 @@ export const appRouter = router({
       return upsertPushReminderPreferences(ctx.user.id, { ...input, enabled: existing.enabled });
     }),
     subscriptions: protectedProcedure.query(({ ctx }) => listOwnedPushSubscriptions(ctx.user.id)),
+    nativeSubscriptions: protectedProcedure.query(({ ctx }) => listOwnedNativePushSubscriptions(ctx.user.id)),
     personalEnrollment: protectedProcedure.query(({ ctx }) => getOwnedPersonalReminderEnrollmentSummary(ctx.user.id)),
     subscribe: protectedProcedure.input(z.object({
       endpoint: z.string().url().max(2_000),
@@ -131,8 +132,19 @@ export const appRouter = router({
       await revokeOwnedPushSubscription(ctx.user.id, input.subscriptionId);
       return { success: true } as const;
     }),
+    subscribeNative: protectedProcedure.input(z.object({ token: z.string().min(32).max(512), deviceLabel: z.string().min(1).max(128).nullable() })).mutation(async ({ ctx, input }) => {
+      await upsertNativePushSubscription({ userId: ctx.user.id, tokenHash: hashNativePushToken(input.token), encryptedToken: encryptNativePushToken(input.token), deviceLabel: input.deviceLabel });
+      const preferences = await getPushReminderPreferences(ctx.user.id);
+      await upsertPushReminderPreferences(ctx.user.id, { ...preferences, enabled: true });
+      return { enabled: true, deliveryMode: "firebase-configuration-required" as const };
+    }),
+    unsubscribeNative: protectedProcedure.input(z.object({ subscriptionId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await revokeOwnedNativePushSubscription(ctx.user.id, input.subscriptionId);
+      return { success: true } as const;
+    }),
     disableAll: protectedProcedure.mutation(async ({ ctx }) => {
       await revokeAllOwnedPushSubscriptions(ctx.user.id);
+      await revokeAllOwnedNativePushSubscriptions(ctx.user.id);
       const preferences = await getPushReminderPreferences(ctx.user.id);
       await upsertPushReminderPreferences(ctx.user.id, { ...preferences, enabled: false });
       return { success: true } as const;
@@ -162,6 +174,7 @@ export const appRouter = router({
         body: z.string().min(1).max(512),
         targetSection: z.enum(["calendar", "todo"]),
         occursAt: z.date(),
+        leadMinutes: z.number().int().nullable().optional(),
       })).max(750),
     })).mutation(async ({ ctx, input }) => {
       const preferences = await getPushReminderPreferences(ctx.user.id);
@@ -171,9 +184,11 @@ export const appRouter = router({
       }
       const now = new Date();
       const items = input.items.flatMap(item => {
-        const scheduledAt = new Date(item.occursAt.getTime() - preferences.defaultLeadMinutes * 60_000);
+        if (item.leadMinutes != null && !isAllowedReminderLeadMinutes(item.leadMinutes)) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid item reminder timing." });
+        const leadMinutes = item.leadMinutes ?? preferences.defaultLeadMinutes;
+        const scheduledAt = new Date(item.occursAt.getTime() - leadMinutes * 60_000);
         if (scheduledAt <= now) return [];
-        return [{ ...item, deliveryKey: createDeliveryKey(ctx.user.id, item.sourceKind, item.sourceId, scheduledAt), scheduledAt }];
+        return [{ ...item, leadMinutes: item.leadMinutes ?? null, deliveryKey: createDeliveryKey(ctx.user.id, item.sourceKind, item.sourceId, scheduledAt), scheduledAt }];
       });
       const result = await syncOwnedPersonalReminderItems(ctx.user.id, items);
       await Promise.all(result.itemsToSchedule.map(item => upsertPushReminderDelivery({ ...item, userId: ctx.user.id })));
