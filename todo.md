@@ -305,3 +305,8 @@
 - [x] Make time optional for new tasks, events, and focus blocks while preserving valid date-only saves.
 - [x] Keep reminders optional inside the composer and remove the redundant top-bar Reminder action.
 - [x] Validate date-only, timed, reminder-enabled, desktop, and compact-phone composer flows before publishing.
+- [x] Audit every MY PLAN website workflow, including navigation, planner creation/editing, calendar, To-do, Progress, Profile, Workspace, reminders, notifications, account connections, imports, Spark, and administrator views.
+- [x] Inspect desktop and compact-phone rendering plus browser, network, and server diagnostics; repair every reproducible issue found.
+- [x] Repeat tests, type checks, production build, whitespace checks, diagnostics review, and responsive screenshots until the audited release is stable.
+- [x] Widen the planner composer at compact desktop widths so its form fields and action labels remain comfortably readable without waiting for the phone breakpoint.
+- [x] Correct the signed-out Sync Center status so it does not imply that calendar import is ready before the user can sign in and connect an account.
