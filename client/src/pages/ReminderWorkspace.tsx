@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { createMyPlanPushSubscription, removeMyPlanPushSubscription, webPushSupport } from "@/lib/webPush";
 import type { PersonalReminderCandidate } from "@/lib/personalReminderEnrollment";
+import "./reminderWorkspace.css";
 
 type Props = { isAuthenticated: boolean; personalReminderCandidates: PersonalReminderCandidate[]; onSignIn: () => void; onOpenCalendar: () => void };
 const leadOptions = [{ value: 0, label: "At start" }, { value: 10, label: "10 minutes before" }, { value: 30, label: "30 minutes before" }, { value: 60, label: "1 hour before" }, { value: 1440, label: "1 day before" }];

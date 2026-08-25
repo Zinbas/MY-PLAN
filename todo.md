@@ -259,4 +259,4 @@
 - [x] Add explicit, opt-in server-side reminder enrollment for personal tasks, blocks, and events so closed-app reminders can use approved minimal delivery data.
 - [x] Strengthen revocable session lifecycle, production log redaction, and abuse controls for sensitive or costly routes.
 - [x] Add installable-app metadata, mobile fixed-control/touch-target safeguards, and social-sharing metadata.
-- [ ] Add continuous integration and complete a staged Home/CSS maintainability refactor without regressing the Paper Field Notes design.
+- [x] Add continuous integration and complete a staged Home/CSS maintainability refactor without regressing the Paper Field Notes design.

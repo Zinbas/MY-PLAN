@@ -1,0 +1,61 @@
+/* Reminder-specific presentation stays with the feature instead of the global planner stylesheet. */
+.reminder-plan-enrollment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 0.42fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 16px;
+  padding: 19px;
+  border: 1px solid rgba(126, 139, 111, 0.26);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(238, 244, 232, 0.88), rgba(255, 253, 246, 0.94));
+}
+
+.reminder-plan-enrollment h2 {
+  margin: 4px 0 7px;
+  font-family: Fraunces, serif;
+  font-size: 22px;
+  letter-spacing: -0.035em;
+}
+
+.reminder-plan-enrollment p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.reminder-enrollment-summary {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  padding: 13px;
+  border: 1px solid rgba(126, 139, 111, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 254, 249, 0.84);
+}
+
+.reminder-enrollment-summary strong {
+  color: var(--olive);
+  font-family: Fraunces, serif;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.reminder-enrollment-summary span { font-size: 11px; font-weight: 700; }
+.reminder-enrollment-summary small { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.reminder-enrollment-actions { display: flex; grid-column: 1 / -1; flex-wrap: wrap; gap: 9px; }
+.reminder-enrollment-actions button { min-height: 40px; padding: 9px 13px; }
+.reminder-enrollment-note { grid-column: 1 / -1; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .reminder-plan-enrollment { transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms cubic-bezier(0.23, 1, 0.32, 1); }
+  .reminder-plan-enrollment:hover { transform: translateY(-1px); border-color: rgba(104, 123, 88, 0.48); }
+}
+
+@media (max-width: 820px) {
+  .reminder-plan-enrollment { grid-template-columns: 1fr; gap: 13px; padding: 16px; }
+  .reminder-enrollment-actions { grid-column: auto; }
+  .reminder-enrollment-actions button { min-height: 44px; }
+  .reminder-enrollment-summary { padding: 12px; }
+}
