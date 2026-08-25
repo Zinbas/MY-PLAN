@@ -331,3 +331,4 @@
 - [x] Repair the current in-app reminder runtime issue and verify that enablement status remains accurate after reload and scope changes.
 - [x] Compare the latest MY PLAN published commit and tracked file set with GitHub main, then synchronize every missing committed source file.
 - [x] Fix image-import confirmation so clicking Add all selected persists each selected event and refreshes the calendar view without duplicate or unrelated entries.
+- [x] Reconfirm the latest published import repair is synchronized to GitHub main and push any missing committed website changes.
