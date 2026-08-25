@@ -336,3 +336,4 @@
 - [x] Package the verified managed-project GitHub audit and synchronization workflow as a reusable skill.
 - [x] Refine the MY PLAN loader into a circular logo with a smooth rotating white orbit strip and reduced-motion fallback.
 - [x] Fix device reminders so the browser permission request is triggered from the user action when needed and the UI shows accurate connected, waiting, blocked, or unavailable status.
+- [x] Add a coherent, reduced-motion-aware interaction system for page changes, dialogs, loading states, buttons, navigation, and success feedback without visual clutter.
