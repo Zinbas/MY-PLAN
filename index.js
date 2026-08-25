@@ -1,4 +1,4 @@
-import { createApp } from "./_app.mjs";
+import { createApp } from "./api/_app.mjs";
 
 const app = await createApp();
 
