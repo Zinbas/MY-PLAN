@@ -6,6 +6,7 @@
 dist/
 build/
 public/
+api/_app.mjs
 *.dist
 
 # Environment variables
