@@ -265,3 +265,7 @@
 - [x] Repair the reported desktop calendar header and control collision with the selected-day panel, preserving readable view and filter controls at constrained laptop widths.
 - [x] Diagnose and repair the failing GitHub Actions MY PLAN quality-check workflow, then verify a successful remote run.
 - [x] Synchronize the present verified MY PLAN welcome-flow and constrained-laptop calendar repairs to GitHub before addressing the workflow failure.
+- [x] Preserve the APK-era source in the isolated `/home/ubuntu/my-plan-apk-variant` worktree on branch `apk-variant`.
+- [x] Restore the managed website to the pre-APK checkpoint `a1dafadd`.
+- [x] Remove APK-era Android files and native schema bookkeeping from the managed website while keeping the isolated APK variant intact.
+- [x] Verify the restored website after rollback, then publish the cleanup checkpoint.
