@@ -251,7 +251,7 @@
 - [x] Correct the reported connected-calendar selection-card visual misalignment while preserving all existing selections.
 - [x] Reproduce one user-authorized connected-calendar selection toggle and restore its exact original state without modifying events.
 - [x] Make connected-calendar selection acknowledge immediately, with optimistic success state and safe rollback when persistence fails.
-- [ ] Diagnose and repair the reported live MY PLAN sign-in failure before resuming the authorized calendar-selection test.
+- [x] Diagnose and repair the reported live MY PLAN sign-in failure before resuming the authorized calendar-selection test.
 - [x] Preserve successful calendar selection changes and show accurate feedback when subsequent Google sync setup needs attention.
 - [ ] Correct the live device-reminder workspace when it shows setup pending despite a verified VAPID-ready response.
 - [x] Scope calendar, linked-calendar, and synced-event database reads at SQL level so other users’ credential-bearing rows never enter an unrelated request’s memory.
@@ -261,3 +261,5 @@
 - [x] Add installable-app metadata, mobile fixed-control/touch-target safeguards, and social-sharing metadata.
 - [x] Add continuous integration and complete a staged Home/CSS maintainability refactor without regressing the Paper Field Notes design.
 - [x] Synchronize the latest verified MY PLAN source and continuous-integration workflow to the user-approved GitHub repository without committing secrets or private planner data.
+- [x] Restore the new-visitor MY PLAN welcome flow so a genuinely new browser sees Sign in or Continue as guest, followed by the optional tutorial choice.
+- [x] Repair the reported desktop calendar header and control collision with the selected-day panel, preserving readable view and filter controls at constrained laptop widths.
