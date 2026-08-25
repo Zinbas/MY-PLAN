@@ -5,7 +5,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
-import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeApplicationSession, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
+import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getOwnedPushSubscriptionStatus, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeApplicationSession, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule, scheduleImportFailureMessage } from "./scheduleImport";
@@ -121,6 +121,7 @@ export const appRouter = router({
       return upsertPushReminderPreferences(ctx.user.id, { ...input, enabled: existing.enabled });
     }),
     subscriptions: protectedProcedure.query(({ ctx }) => listOwnedPushSubscriptions(ctx.user.id)),
+    currentDevice: protectedProcedure.input(z.object({ endpoint: z.string().url().max(2_000) })).query(({ ctx, input }) => getOwnedPushSubscriptionStatus(ctx.user.id, hashPushEndpoint(input.endpoint))),
     personalEnrollment: protectedProcedure.query(({ ctx }) => getOwnedPersonalReminderEnrollmentSummary(ctx.user.id)),
     subscribe: protectedProcedure.input(z.object({
       endpoint: z.string().url().max(2_000),

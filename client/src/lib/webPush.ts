@@ -20,6 +20,20 @@ function base64UrlToUint8Array(value: string) {
   return Uint8Array.from(raw, char => char.charCodeAt(0));
 }
 
+function serializePushSubscription(subscription: PushSubscription): SerializablePushSubscription {
+  const raw = subscription.toJSON();
+  if (!raw.endpoint || !raw.keys?.p256dh || !raw.keys.auth) throw new Error("This browser did not return a usable device subscription.");
+  return { endpoint: raw.endpoint, expirationTime: raw.expirationTime ?? null, keys: { p256dh: raw.keys.p256dh, auth: raw.keys.auth } };
+}
+
+/** Reads this browser's existing MY PLAN subscription without prompting for notification permission. */
+export async function getMyPlanPushSubscription(): Promise<SerializablePushSubscription | null> {
+  if (!webPushSupport()) return null;
+  const registration = await registerMyPlanServiceWorker();
+  const subscription = await registration?.pushManager.getSubscription();
+  return subscription ? serializePushSubscription(subscription) : null;
+}
+
 export async function createMyPlanPushSubscription(publicKey: string): Promise<SerializablePushSubscription> {
   if (!webPushSupport()) throw new Error("This browser does not support device reminders.");
   const registration = await registerMyPlanServiceWorker();
@@ -31,9 +45,7 @@ export async function createMyPlanPushSubscription(publicKey: string): Promise<S
     userVisibleOnly: true,
     applicationServerKey: base64UrlToUint8Array(publicKey),
   });
-  const raw = subscription.toJSON();
-  if (!raw.endpoint || !raw.keys?.p256dh || !raw.keys.auth) throw new Error("This browser did not return a usable device subscription.");
-  return { endpoint: raw.endpoint, expirationTime: raw.expirationTime ?? null, keys: { p256dh: raw.keys.p256dh, auth: raw.keys.auth } };
+  return serializePushSubscription(subscription);
 }
 
 export async function removeMyPlanPushSubscription() {

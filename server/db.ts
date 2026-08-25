@@ -457,6 +457,15 @@ export async function listOwnedPushSubscriptions(userId: number) {
     .from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
 }
 
+export async function getOwnedPushSubscriptionStatus(userId: number, endpointHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const subscription = (await db.select({ status: pushSubscriptions.status, expiresAt: pushSubscriptions.expiresAt })
+    .from(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpointHash, endpointHash))).limit(1))[0];
+  const connected = Boolean(subscription?.status === "active" && (!subscription.expiresAt || subscription.expiresAt > new Date()));
+  return { connected } as const;
+}
+
 export async function listActivePushSubscriptions(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");

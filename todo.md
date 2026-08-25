@@ -335,3 +335,4 @@
 - [x] Verify the complete current MY PLAN tracked file set against GitHub main and synchronize any missing committed change.
 - [x] Package the verified managed-project GitHub audit and synchronization workflow as a reusable skill.
 - [x] Refine the MY PLAN loader into a circular logo with a smooth rotating white orbit strip and reduced-motion fallback.
+- [x] Fix device reminders so the browser permission request is triggered from the user action when needed and the UI shows accurate connected, waiting, blocked, or unavailable status.
