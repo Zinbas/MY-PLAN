@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import net from "net";
-import { createApp } from "./app";
+import { createApp } from "./_core/app";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
