@@ -37,17 +37,6 @@ export const applicationSessions = mysqlTable("applicationSessions", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("applicationSessions_user_status_idx").on(table.userId, table.revokedAt, table.expiresAt)]);
 
-/** One-time, verifier-bound native sign-in handoffs. Raw codes and verifiers are never persisted. */
-export const nativeOAuthHandoffs = mysqlTable("nativeOAuthHandoffs", {
-  id: int("id").autoincrement().primaryKey(),
-  codeHash: varchar("codeHash", { length: 64 }).notNull().unique(),
-  verifierHash: varchar("verifierHash", { length: 64 }).notNull(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-  expiresAt: timestamp("expiresAt").notNull(),
-  consumedAt: timestamp("consumedAt"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, table => [index("nativeOAuthHandoffs_user_expiry_idx").on(table.userId, table.expiresAt)]);
-
 /** Google or Google Workspace identity linked by an application user. Tokens remain server-only. */
 export const calendarConnections = mysqlTable("calendarConnections", {
   id: int("id").autoincrement().primaryKey(),
@@ -184,20 +173,6 @@ export const pushSubscriptions = mysqlTable("pushSubscriptions", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, table => [index("pushSubscriptions_user_status_idx").on(table.userId, table.status)]);
 
-/** Native FCM device registrations, intentionally separate from encrypted browser Web Push subscriptions. */
-export const nativePushSubscriptions = mysqlTable("nativePushSubscriptions", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-  tokenHash: varchar("tokenHash", { length: 64 }).notNull().unique(),
-  encryptedToken: text("encryptedToken").notNull(),
-  platform: mysqlEnum("platform", ["android"]).notNull().default("android"),
-  deviceLabel: varchar("deviceLabel", { length: 128 }),
-  status: mysqlEnum("status", ["active", "revoked", "expired"]).notNull().default("active"),
-  lastError: varchar("lastError", { length: 255 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-}, table => [index("nativePushSubscriptions_user_status_idx").on(table.userId, table.status)]);
-
 /** Minimal, user-approved reminder payloads claimed and delivered by the background dispatcher. */
 export const pushReminderDeliveries = mysqlTable("pushReminderDeliveries", {
   id: int("id").autoincrement().primaryKey(),
@@ -231,7 +206,6 @@ export const personalReminderItems = mysqlTable("personalReminderItems", {
   body: varchar("body", { length: 512 }).notNull(),
   targetSection: mysqlEnum("targetSection", ["calendar", "todo"]).notNull(),
   occursAt: timestamp("occursAt").notNull(),
-  leadMinutes: int("leadMinutes"),
   deliveryKey: varchar("deliveryKey", { length: 128 }).notNull(),
   isActive: boolean("isActive").notNull().default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -243,12 +217,10 @@ export const personalReminderItems = mysqlTable("personalReminderItems", {
 
 export type CalendarConnection = typeof calendarConnections.$inferSelect;
 export type ApplicationSession = typeof applicationSessions.$inferSelect;
-export type NativeOAuthHandoff = typeof nativeOAuthHandoffs.$inferSelect;
 export type LinkedCalendar = typeof linkedCalendars.$inferSelect;
 export type SyncedEvent = typeof syncedEvents.$inferSelect;
 export type SparkEvent = typeof sparkEvents.$inferSelect;
 export type PushReminderPreference = typeof pushReminderPreferences.$inferSelect;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
-export type NativePushSubscription = typeof nativePushSubscriptions.$inferSelect;
 export type PushReminderDelivery = typeof pushReminderDeliveries.$inferSelect;
 export type PersonalReminderItem = typeof personalReminderItems.$inferSelect;

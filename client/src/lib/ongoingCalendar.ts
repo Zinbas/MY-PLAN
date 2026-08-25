@@ -15,8 +15,6 @@ export type PlannerBlock = {
   repeatUntil?: Date | null;
   excludedDates?: string[];
   checklist?: { id: string; label: string; done: boolean }[];
-  /** Optional item-level reminder lead; private notes and course context remain local. */
-  reminderLeadMinutes?: number;
 };
 
 export type PersonalEvent = {
@@ -27,7 +25,6 @@ export type PersonalEvent = {
   priority: "high" | "normal";
   course: string;
   notes: string;
-  reminderLeadMinutes?: number;
 };
 
 export type PlanTask = {
@@ -43,7 +40,6 @@ export type PlanTask = {
   status?: TaskStatus;
   createdAt?: Date;
   completedAt?: Date | null;
-  reminderLeadMinutes?: number;
 };
 
 export type CalendarItem = PlannerBlock | PersonalEvent | PlanTask;

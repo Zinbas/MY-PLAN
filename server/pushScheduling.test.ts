@@ -7,13 +7,11 @@ vi.mock("./db", async importOriginal => {
     ...actual,
     getPushReminderPreferences: vi.fn(),
     listActivePushSubscriptions: vi.fn(),
-    syncOwnedPersonalReminderItems: vi.fn(),
-    cancelOwnedPushReminderDeliveries: vi.fn(),
     upsertPushReminderDelivery: vi.fn(),
   };
 });
 
-import { cancelOwnedPushReminderDeliveries, getPushReminderPreferences, listActivePushSubscriptions, syncOwnedPersonalReminderItems, upsertPushReminderDelivery } from "./db";
+import { getPushReminderPreferences, listActivePushSubscriptions, upsertPushReminderDelivery } from "./db";
 import { appRouter } from "./routers";
 
 function signedInContext(): TrpcContext {
@@ -40,19 +38,5 @@ describe("MY PLAN reminder scheduling enrollment", () => {
       scheduledAt: new Date(Date.now() + 60_000),
     })).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
     expect(upsertPushReminderDelivery).not.toHaveBeenCalled();
-  });
-
-  it("uses an item-level lead over the account default when enrolling an approved local plan", async () => {
-    vi.mocked(getPushReminderPreferences).mockResolvedValue({ id: null, userId: 47, enabled: true, defaultLeadMinutes: 60, quietHoursStart: null, quietHoursEnd: null, timeZone: null });
-    vi.mocked(listActivePushSubscriptions).mockResolvedValue([{ id: 1, expiresAt: null }] as any);
-    vi.mocked(syncOwnedPersonalReminderItems).mockImplementation(async (_userId, items) => ({ activeCount: items.length, itemsToSchedule: items, deliveryKeysToCancel: [] }));
-    vi.mocked(cancelOwnedPushReminderDeliveries).mockResolvedValue(undefined);
-    vi.mocked(upsertPushReminderDelivery).mockResolvedValue(undefined);
-    const occursAt = new Date(Date.now() + 24 * 60 * 60_000);
-    const caller = appRouter.createCaller(signedInContext());
-
-    await caller.push.syncPersonalEnrollment({ items: [{ sourceKind: "task", sourceId: "task-15", title: "Send draft", body: "Task due", targetSection: "todo", occursAt, leadMinutes: 10 }] });
-
-    expect(syncOwnedPersonalReminderItems).toHaveBeenCalledWith(47, [expect.objectContaining({ leadMinutes: 10, scheduledAt: new Date(occursAt.getTime() - 10 * 60_000) })]);
   });
 });

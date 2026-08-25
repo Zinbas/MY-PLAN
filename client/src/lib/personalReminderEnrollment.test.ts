@@ -21,19 +21,6 @@ describe("personal reminder enrollment", () => {
     expect(JSON.stringify(candidates)).not.toContain("History");
   });
 
-  it("keeps an explicit contextual lead while still excluding private item details", () => {
-    const candidates = personalReminderCandidates({
-      now,
-      tasks: [{ id: "task-lead", title: "Send draft", dueAt: new Date("2026-08-26T12:00:00.000Z"), priority: "normal", course: "Private course", notes: "Private note", completed: false, reminderLeadMinutes: 10 }],
-      events: [],
-      blocks: [],
-    });
-
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]).toMatchObject({ leadMinutes: 10, title: "Send draft" });
-    expect(JSON.stringify(candidates)).not.toContain("Private");
-  });
-
   it("skips completed, past, and out-of-horizon planning items", () => {
     const candidates = personalReminderCandidates({
       now,

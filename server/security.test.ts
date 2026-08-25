@@ -13,11 +13,6 @@ describe("HTTP security boundaries", () => {
     expect(isSameOriginUnsafeRequest({ method: "GET", headers: { host: "myplan.example", origin: "https://attacker.example" } } as any)).toBe(true);
   });
 
-  it("accepts only bearer-authenticated packaged Android writes", () => {
-    expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "myplan.example", origin: "capacitor://localhost", authorization: "Bearer signed-session" } } as any)).toBe(true);
-    expect(isSameOriginUnsafeRequest({ method: "POST", headers: { host: "myplan.example", origin: "capacitor://localhost" } } as any)).toBe(false);
-  });
-
   it("adds conservative browser protections and returns a generic blocked-write error", () => {
     const headers: Record<string, string> = {};
     let status = 200; let payload: unknown; let proceeded = false;

@@ -1,7 +1,5 @@
 import { OAUTH_STATE_COOKIE, encodeOAuthState } from "@shared/const";
 import { EXTERNAL_AUTH_PENDING_KEY } from "@/lib/externalAuthRefresh";
-import { isNativeAndroidMyPlanApp } from "@/lib/capacitorRuntime";
-import { startNativeLogin } from "@/lib/nativeSession";
 
 export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 
@@ -16,10 +14,6 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 // with "invalid oauth state". It returns void by design, so there is no URL to
 // stash across renders.
 export const startLogin = () => {
-  if (isNativeAndroidMyPlanApp()) {
-    void startNativeLogin();
-    return;
-  }
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
   const redirectUri = `${window.location.origin}/api/oauth/callback`;

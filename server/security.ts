@@ -16,17 +16,13 @@ function configuredPublicHost(redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_UR
   }
 }
 
-function isNativeBearerRequest(request: RequestLike) {
-  const origin = header(request, "origin");
-  const authorization = header(request, "authorization");
-  return origin === "capacitor://localhost" && Boolean(authorization?.startsWith("Bearer "));
-}
-
 export function isSameOriginUnsafeRequest(request: RequestLike, redirectUri = process.env.GOOGLE_OAUTH_REDIRECT_URI) {
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method.toUpperCase())) return true;
-  if (isNativeBearerRequest(request)) return true;
   const origin = header(request, "origin");
   if (!origin) return true;
+  // Autoscale deployments terminate TLS at a trusted proxy, so `host` can be an
+  // internal service address while the browser sends the public MY PLAN origin.
+  // The proxy-provided public host takes precedence when it is available.
   const host = header(request, "x-forwarded-host")?.split(",")[0]?.trim() || header(request, "host");
   if (!host) return false;
   try {
@@ -45,17 +41,6 @@ export function securityHeaders(request: Request, response: Response, next: Next
   response.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
   response.setHeader("Content-Security-Policy", "base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
   if (request.path.startsWith("/api/")) response.setHeader("Cache-Control", "no-store");
-
-  if (header(request, "origin") === "capacitor://localhost") {
-    response.setHeader("Access-Control-Allow-Origin", "capacitor://localhost");
-    response.setHeader("Access-Control-Allow-Headers", "authorization, content-type");
-    response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    response.setHeader("Vary", "Origin");
-    if (request.method.toUpperCase() === "OPTIONS") {
-      response.status(204).end();
-      return;
-    }
-  }
 
   const forwarded = header(request, "x-forwarded-proto");
   if (request.protocol === "https" || forwarded?.split(",").some(value => value.trim() === "https")) {

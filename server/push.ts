@@ -53,19 +53,6 @@ export function hashPushEndpoint(endpoint: string) {
   return createHash("sha256").update(endpoint).digest("hex");
 }
 
-export function hashNativePushToken(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-export function encryptNativePushToken(token: string) {
-  if (!/^[A-Za-z0-9_:-]{32,512}$/.test(token)) throw new Error("Invalid native push token");
-  return encryptGoogleCredential(token);
-}
-
-export function decryptNativePushToken(token: string) {
-  return decryptGoogleCredential(token);
-}
-
 export function encryptPushSubscription(input: BrowserPushSubscription) {
   return encryptGoogleCredential(JSON.stringify(input));
 }
