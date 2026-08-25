@@ -334,3 +334,4 @@
 - [x] Reconfirm the latest published import repair is synchronized to GitHub main and push any missing committed website changes.
 - [x] Verify the complete current MY PLAN tracked file set against GitHub main and synchronize any missing committed change.
 - [x] Package the verified managed-project GitHub audit and synchronization workflow as a reusable skill.
+- [x] Refine the MY PLAN loader into a circular logo with a smooth rotating white orbit strip and reduced-motion fallback.
