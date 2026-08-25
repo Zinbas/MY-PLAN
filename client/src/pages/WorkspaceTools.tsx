@@ -1,6 +1,6 @@
-import { ArrowRight, BellRing, CirclePlus, LogIn, RefreshCw, ShieldCheck, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, BellRing, CirclePlus, LogIn, RefreshCw, Settings2, ShieldCheck, Sparkles, Upload } from "lucide-react";
 
-type ToolSection = "accounts" | "sync" | "import" | "spark" | "reminders";
+type ToolSection = "accounts" | "settings" | "sync" | "import" | "spark" | "reminders";
 
 export default function WorkspaceTools({ onOpen, isAuthenticated, onSignIn }: { onOpen: (section: ToolSection) => void; isAuthenticated: boolean; onSignIn: () => void }) {
   return <section className="workspace-card tools-workspace">
@@ -8,6 +8,7 @@ export default function WorkspaceTools({ onOpen, isAuthenticated, onSignIn }: { 
       <div><p className="kicker"><Upload size={15} /> Workspace tools</p><h1>Useful when you need them.</h1><p>Planning stays in Calendar and To-do. These optional utilities stay calm and out of the way.</p></div>
     </header>
     <div className="tools-primary" aria-label="Primary workspace tools">
+      <button className="tool-card" onClick={() => onOpen("settings")}><Settings2 size={20} /><span><strong>Settings</strong><small>Manage reminders, notifications, connected services, and planning preferences.</small></span><ArrowRight size={16} /></button>
       <button className="tool-card is-primary tool-card-account" onClick={() => isAuthenticated ? onOpen("accounts") : onSignIn()}><CirclePlus size={20} /><span><strong>{isAuthenticated ? "Account & calendar" : "Sign in to MY PLAN"}</strong><small>{isAuthenticated ? "Manage your private account, connect Google, and choose the calendars that belong to you." : "Create your private MY PLAN account to sync calendars, import schedules, and use connected tools."}</small></span>{isAuthenticated ? <ArrowRight size={16} /> : <LogIn size={16} />}</button>
       <button className="tool-card" onClick={() => onOpen("import")}><Upload size={20} /><span><strong>Import a schedule</strong><small>Turn a PDF, image, document, spreadsheet, CSV, or ICS file into private review suggestions.</small></span><ArrowRight size={16} /></button>
     </div>

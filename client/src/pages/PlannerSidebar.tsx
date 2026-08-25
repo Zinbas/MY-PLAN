@@ -1,4 +1,4 @@
-import { BarChart3, BookOpenCheck, CalendarDays, ListTodo, MoreHorizontal, ShieldCheck } from "lucide-react";
+import { BarChart3, BookOpenCheck, CalendarDays, ListTodo, MoreHorizontal, ShieldCheck, UserRound } from "lucide-react";
 import { accountStatusCopy } from "@/lib/accountStatusCopy";
 import { isWorkspaceToolsSection, type PlannerSection } from "@/lib/plannerNavigation";
 
@@ -23,6 +23,7 @@ export default function PlannerSidebar({ activeSection, isAdmin, isAuthenticated
       <button className={activeSection === "calendar" ? "active" : ""} onClick={() => onOpenSection("calendar")}><CalendarDays size={17} /> Calendar</button>
       <button className={activeSection === "todo" ? "active" : ""} onClick={() => onOpenSection("todo")}><ListTodo size={17} /> To-do</button>
       <button className={activeSection === "progress" ? "active" : ""} onClick={() => onOpenSection("progress")}><BarChart3 size={17} /> Progress</button>
+      <button className={activeSection === "profile" ? "active" : ""} onClick={() => onOpenSection("profile")}><UserRound size={17} /> Profile</button>
       <button className={isWorkspaceToolsSection(activeSection) ? "active" : ""} onClick={() => onOpenSection("tools")}><MoreHorizontal size={17} /> Workspace tools</button>
       {isAdmin ? <button className={activeSection === "admin" ? "active" : ""} onClick={() => onOpenSection("admin")}><ShieldCheck size={17} /> Admin panel</button> : null}
     </div>

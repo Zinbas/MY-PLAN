@@ -1,0 +1,1 @@
+ALTER TABLE `personalReminderItems` ADD `leadMinutes` int;

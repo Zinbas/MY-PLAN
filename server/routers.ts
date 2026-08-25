@@ -162,6 +162,7 @@ export const appRouter = router({
         body: z.string().min(1).max(512),
         targetSection: z.enum(["calendar", "todo"]),
         occursAt: z.date(),
+        leadMinutes: z.number().int().min(5).max(1440).optional(),
       })).max(750),
     })).mutation(async ({ ctx, input }) => {
       const preferences = await getPushReminderPreferences(ctx.user.id);
@@ -171,7 +172,7 @@ export const appRouter = router({
       }
       const now = new Date();
       const items = input.items.flatMap(item => {
-        const scheduledAt = new Date(item.occursAt.getTime() - preferences.defaultLeadMinutes * 60_000);
+        const scheduledAt = new Date(item.occursAt.getTime() - (item.leadMinutes ?? preferences.defaultLeadMinutes) * 60_000);
         if (scheduledAt <= now) return [];
         return [{ ...item, deliveryKey: createDeliveryKey(ctx.user.id, item.sourceKind, item.sourceId, scheduledAt), scheduledAt }];
       });

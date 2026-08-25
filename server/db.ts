@@ -505,6 +505,7 @@ export type PersonalReminderEnrollmentInput = {
   body: string;
   targetSection: "calendar" | "todo";
   occursAt: Date;
+  leadMinutes?: number;
   deliveryKey: string;
   scheduledAt: Date;
 };
@@ -524,13 +525,13 @@ export async function syncOwnedPersonalReminderItems(userId: number, items: Pers
   const stale = existing.filter(item => !incomingSources.has(`${item.sourceKind}:${item.sourceId}`));
   const itemsToSchedule = items.filter(item => {
     const current = existingBySource.get(`${item.sourceKind}:${item.sourceId}`);
-    return !current || current.deliveryKey !== item.deliveryKey || current.title !== item.title || current.body !== item.body || current.targetSection !== item.targetSection || current.occursAt.getTime() !== item.occursAt.getTime();
+    return !current || current.deliveryKey !== item.deliveryKey || current.title !== item.title || current.body !== item.body || current.targetSection !== item.targetSection || current.occursAt.getTime() !== item.occursAt.getTime() || current.leadMinutes !== item.leadMinutes;
   });
 
   for (const item of items) {
     const { scheduledAt: _scheduledAt, ...record } = item;
     await db.insert(personalReminderItems).values({ userId, ...record, isActive: true }).onDuplicateKeyUpdate({
-      set: { title: item.title, body: item.body, targetSection: item.targetSection, occursAt: item.occursAt, deliveryKey: item.deliveryKey, isActive: true },
+      set: { title: item.title, body: item.body, targetSection: item.targetSection, occursAt: item.occursAt, leadMinutes: item.leadMinutes ?? null, deliveryKey: item.deliveryKey, isActive: true },
     });
   }
   if (stale.length) {

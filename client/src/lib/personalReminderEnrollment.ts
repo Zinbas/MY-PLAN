@@ -7,6 +7,7 @@ export type PersonalReminderCandidate = {
   body: string;
   targetSection: "calendar" | "todo";
   occursAt: Date;
+  leadMinutes?: number;
 };
 
 export const PERSONAL_REMINDER_HORIZON_DAYS = 120;
@@ -29,6 +30,7 @@ export function personalReminderCandidates(input: {
       body: task.scheduledStartAt ? "Scheduled task starts" : "Task due",
       targetSection: "todo" as const,
       occursAt: task.scheduledStartAt ?? task.dueAt,
+      leadMinutes: task.reminderLeadMinutes,
     })),
     ...input.events.filter(event => inHorizon(event.startAt)).map(event => ({
       sourceKind: "event" as const,
@@ -37,6 +39,7 @@ export function personalReminderCandidates(input: {
       body: "Personal event starts",
       targetSection: "calendar" as const,
       occursAt: event.startAt,
+      leadMinutes: event.reminderLeadMinutes,
     })),
     ...input.blocks.filter(block => !block.completed).flatMap(block => {
       const instances = block.repeat && block.repeat !== "none" ? expandRepeatingBlock(block, input.now, horizon) : [block];
@@ -47,6 +50,7 @@ export function personalReminderCandidates(input: {
         body: "Focus block starts",
         targetSection: "calendar" as const,
         occursAt: instance.startAt,
+        leadMinutes: instance.reminderLeadMinutes,
       }));
     }),
   ];

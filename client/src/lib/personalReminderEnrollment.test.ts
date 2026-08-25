@@ -7,7 +7,7 @@ describe("personal reminder enrollment", () => {
   it("creates upcoming reminder candidates without exporting notes, course names, or checklists", () => {
     const candidates = personalReminderCandidates({
       now,
-      tasks: [{ id: "task-1", title: "Submit essay", dueAt: new Date("2026-08-26T09:00:00.000Z"), priority: "high", course: "History", notes: "Private draft note", completed: false }],
+      tasks: [{ id: "task-1", title: "Submit essay", dueAt: new Date("2026-08-26T09:00:00.000Z"), priority: "high", course: "History", notes: "Private draft note", completed: false, reminderLeadMinutes: 15 }],
       events: [{ id: "event-1", title: "Study group", startAt: new Date("2026-08-27T10:00:00.000Z"), endAt: new Date("2026-08-27T11:00:00.000Z"), priority: "normal", course: "Biology", notes: "Private location" }],
       blocks: [{ id: "block-1", title: "Deep work", startAt: new Date("2026-08-28T10:00:00.000Z"), endAt: new Date("2026-08-28T11:00:00.000Z"), source: "planner", notes: "Private focus note", checklist: [{ id: "one", label: "Private checklist item", done: false }] }],
     });
@@ -19,6 +19,7 @@ describe("personal reminder enrollment", () => {
     ]);
     expect(JSON.stringify(candidates)).not.toContain("Private");
     expect(JSON.stringify(candidates)).not.toContain("History");
+    expect(candidates[0].leadMinutes).toBe(15);
   });
 
   it("skips completed, past, and out-of-horizon planning items", () => {

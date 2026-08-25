@@ -206,6 +206,7 @@ export const personalReminderItems = mysqlTable("personalReminderItems", {
   body: varchar("body", { length: 512 }).notNull(),
   targetSection: mysqlEnum("targetSection", ["calendar", "todo"]).notNull(),
   occursAt: timestamp("occursAt").notNull(),
+  leadMinutes: int("leadMinutes"),
   deliveryKey: varchar("deliveryKey", { length: 128 }).notNull(),
   isActive: boolean("isActive").notNull().default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

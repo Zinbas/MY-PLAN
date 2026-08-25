@@ -269,3 +269,19 @@
 - [x] Restore the managed website to the pre-APK checkpoint `a1dafadd`.
 - [x] Remove APK-era Android files and native schema bookkeeping from the managed website while keeping the isolated APK variant intact.
 - [x] Verify the restored website after rollback, then publish the cleanup checkpoint.
+- [ ] Add an obvious Reminder entry to the isolated APK Add menu and Today surface without changing the restored website.
+- [ ] Add reminder lead-time selection inside APK task, event, and focus-block creation/editing flows.
+- [ ] Add direct Reminder actions to APK Today/timeline cards and validate the full flow before rebuilding the APK.
+- [ ] Add an obvious Reminder entry to the isolated APK Add menu and Today surface without changing the restored website.
+- [ ] Add reminder lead-time selection inside APK task, event, and focus-block creation/editing flows.
+- [ ] Add direct Reminder actions to APK Today/timeline cards and validate the full flow before rebuilding the APK.
+- [x] Add an obvious Reminder action to the restored MY PLAN website’s main planning actions without changing the separate APK worktree.
+- [x] Add contextual reminder lead-time selection inside website task, event, and focus-block creation/editing flows.
+- [x] Add direct Reminder actions to website calendar and task cards, then validate the full reminder flow on desktop and compact phone.
+- [x] Add an accessible website Profile/Account destination for user identity, email, sign-in state, account actions, connected-calendar status, and reminder/device settings.
+- [x] Keep administrator controls separate from the normal user Profile/Account workspace.
+- [x] Validate signed-out, signed-in, desktop, and compact-phone Profile/Account states before publishing.
+- [x] Place website Settings inside Workspace rather than inside Profile, including reminder, notification, connected-calendar, and app configuration controls.
+- [x] Keep website Profile limited to user identity, account state, and account actions, with administrator controls separate.
+- [x] Correct the website information architecture so Profile is a separate main-navigation section, while Settings and reminders remain inside Workspace.
+- [x] Remove any wording that implies Profile is part of Workspace and revalidate the corrected navigation.
