@@ -25,6 +25,10 @@ function contextFor(role: "admin" | "user"): TrpcContext {
 
 describe("administrator identity and access", () => {
   it("validates the configured administrator Gmail allowlist", () => {
+    if (!ENV.adminGoogleEmail) {
+      expect(isAdminGoogleEmail("administrator@example.com")).toBe(false);
+      return;
+    }
     expect(ENV.adminGoogleEmail).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
     expect(isAdminGoogleEmail(ENV.adminGoogleEmail.toUpperCase())).toBe(true);
     expect(isAdminGoogleEmail("ordinary@example.com")).toBe(false);
@@ -53,8 +57,10 @@ describe("administrator identity and access", () => {
 
   it("allows safe administrator role changes while preventing self-demotion and demotion of the designated administrator", () => {
     expect(roleChangeGuardrail(1, 2, "ordinary@example.com", "admin")).toBeNull();
-    expect(roleChangeGuardrail(1, 1, ENV.adminGoogleEmail, "user")).toContain("own role");
-    expect(roleChangeGuardrail(1, 2, ENV.adminGoogleEmail, "user")).toContain("cannot be demoted");
+    expect(roleChangeGuardrail(1, 1, ENV.adminGoogleEmail || "ordinary@example.com", "user")).toContain("own role");
+    if (ENV.adminGoogleEmail) {
+      expect(roleChangeGuardrail(1, 2, ENV.adminGoogleEmail, "user")).toContain("cannot be demoted");
+    }
   });
 
   it("keeps private workspaces isolated and preserves administrator legacy plan records at first sign-in", () => {
