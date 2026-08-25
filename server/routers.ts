@@ -5,7 +5,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
-import { cancelOwnedPushReminderDeliveries, getAdminOverview, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeOwnedPushSubscription, setManagedUserRole, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
+import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule, scheduleImportFailureMessage } from "./scheduleImport";
@@ -104,6 +104,7 @@ export const appRouter = router({
       return upsertPushReminderPreferences(ctx.user.id, { ...input, enabled: existing.enabled });
     }),
     subscriptions: protectedProcedure.query(({ ctx }) => listOwnedPushSubscriptions(ctx.user.id)),
+    personalEnrollment: protectedProcedure.query(({ ctx }) => getOwnedPersonalReminderEnrollmentSummary(ctx.user.id)),
     subscribe: protectedProcedure.input(z.object({
       endpoint: z.string().url().max(2_000),
       expirationTime: z.number().finite().positive().nullable(),
@@ -148,6 +149,37 @@ export const appRouter = router({
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Enable MY PLAN device reminders on a current browser before adding an off-app reminder." });
       }
       await upsertPushReminderDelivery({ ...input, userId: ctx.user.id, deliveryKey: createDeliveryKey(ctx.user.id, input.sourceKind, input.sourceId, input.scheduledAt) });
+      return { success: true } as const;
+    }),
+    syncPersonalEnrollment: protectedProcedure.input(z.object({
+      items: z.array(z.object({
+        sourceKind: z.enum(["task", "event", "block"]),
+        sourceId: z.string().min(1).max(255),
+        title: z.string().min(1).max(1024),
+        body: z.string().min(1).max(512),
+        targetSection: z.enum(["calendar", "todo"]),
+        occursAt: z.date(),
+      })).max(750),
+    })).mutation(async ({ ctx, input }) => {
+      const preferences = await getPushReminderPreferences(ctx.user.id);
+      const subscriptions = await listActivePushSubscriptions(ctx.user.id);
+      if (!preferences.enabled || !subscriptions.some(subscription => !subscription.expiresAt || subscription.expiresAt > new Date())) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Enable MY PLAN device reminders on a current browser before making local planning items available for off-app reminders." });
+      }
+      const now = new Date();
+      const items = input.items.flatMap(item => {
+        const scheduledAt = new Date(item.occursAt.getTime() - preferences.defaultLeadMinutes * 60_000);
+        if (scheduledAt <= now) return [];
+        return [{ ...item, deliveryKey: createDeliveryKey(ctx.user.id, item.sourceKind, item.sourceId, scheduledAt), scheduledAt }];
+      });
+      const result = await syncOwnedPersonalReminderItems(ctx.user.id, items);
+      await Promise.all(result.itemsToSchedule.map(item => upsertPushReminderDelivery({ ...item, userId: ctx.user.id })));
+      await cancelOwnedPushReminderDeliveries(ctx.user.id, result.deliveryKeysToCancel);
+      return { activeCount: result.activeCount, scheduledCount: result.itemsToSchedule.length } as const;
+    }),
+    clearPersonalEnrollment: protectedProcedure.mutation(async ({ ctx }) => {
+      const deliveryKeys = await clearOwnedPersonalReminderItems(ctx.user.id);
+      await cancelOwnedPushReminderDeliveries(ctx.user.id, deliveryKeys);
       return { success: true } as const;
     }),
     cancelDeliveries: protectedProcedure.input(z.object({ deliveryKeys: z.array(z.string().regex(/^[a-f0-9]{64}$/)).max(100) })).mutation(async ({ ctx, input }) => {

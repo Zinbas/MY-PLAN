@@ -253,3 +253,10 @@
 - [x] Make connected-calendar selection acknowledge immediately, with optimistic success state and safe rollback when persistence fails.
 - [ ] Diagnose and repair the reported live MY PLAN sign-in failure before resuming the authorized calendar-selection test.
 - [x] Preserve successful calendar selection changes and show accurate feedback when subsequent Google sync setup needs attention.
+- [ ] Correct the live device-reminder workspace when it shows setup pending despite a verified VAPID-ready response.
+- [x] Scope calendar, linked-calendar, and synced-event database reads at SQL level so other users’ credential-bearing rows never enter an unrelated request’s memory.
+- [x] Restore browser pinch-zoom support by removing the restrictive viewport maximum scale.
+- [x] Add explicit, opt-in server-side reminder enrollment for personal tasks, blocks, and events so closed-app reminders can use approved minimal delivery data.
+- [ ] Strengthen revocable session lifecycle, production log redaction, and abuse controls for sensitive or costly routes.
+- [ ] Add installable-app metadata, mobile fixed-control/touch-target safeguards, and social-sharing metadata.
+- [ ] Add continuous integration and complete a staged Home/CSS maintainability refactor without regressing the Paper Field Notes design.

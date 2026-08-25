@@ -2,12 +2,13 @@ import { BellRing, Check, Clock3, ExternalLink, ShieldCheck, Smartphone, X } fro
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { createMyPlanPushSubscription, removeMyPlanPushSubscription, webPushSupport } from "@/lib/webPush";
+import type { PersonalReminderCandidate } from "@/lib/personalReminderEnrollment";
 
-type Props = { isAuthenticated: boolean; onSignIn: () => void; onOpenCalendar: () => void };
+type Props = { isAuthenticated: boolean; personalReminderCandidates: PersonalReminderCandidate[]; onSignIn: () => void; onOpenCalendar: () => void };
 const leadOptions = [{ value: 0, label: "At start" }, { value: 10, label: "10 minutes before" }, { value: 30, label: "30 minutes before" }, { value: 60, label: "1 hour before" }, { value: 1440, label: "1 day before" }];
 type DevicePermissionState = "checking" | "unsupported" | "default" | "granted" | "denied";
 
-export default function ReminderWorkspace({ isAuthenticated, onSignIn, onOpenCalendar }: Props) {
+export default function ReminderWorkspace({ isAuthenticated, personalReminderCandidates, onSignIn, onOpenCalendar }: Props) {
   const readiness = trpc.push.readiness.useQuery();
   const preferences = trpc.push.preferences.useQuery(undefined, { enabled: isAuthenticated });
   const subscriptions = trpc.push.subscriptions.useQuery(undefined, { enabled: isAuthenticated });
@@ -15,6 +16,9 @@ export default function ReminderWorkspace({ isAuthenticated, onSignIn, onOpenCal
   const subscribe = trpc.push.subscribe.useMutation({ onSuccess: () => { void preferences.refetch(); void subscriptions.refetch(); } });
   const disableAll = trpc.push.disableAll.useMutation({ onSuccess: () => { void preferences.refetch(); void subscriptions.refetch(); } });
   const unsubscribe = trpc.push.unsubscribe.useMutation({ onSuccess: () => void subscriptions.refetch() });
+  const enrollment = trpc.push.personalEnrollment.useQuery(undefined, { enabled: isAuthenticated });
+  const syncPersonalEnrollment = trpc.push.syncPersonalEnrollment.useMutation({ onSuccess: () => void enrollment.refetch() });
+  const clearPersonalEnrollment = trpc.push.clearPersonalEnrollment.useMutation({ onSuccess: () => void enrollment.refetch() });
   const [message, setMessage] = useState("");
   const [leadMinutes, setLeadMinutes] = useState(10);
   const [quietEnabled, setQuietEnabled] = useState(false);
@@ -63,7 +67,26 @@ export default function ReminderWorkspace({ isAuthenticated, onSignIn, onOpenCal
   const turnOffEverywhere = async () => {
     await removeMyPlanPushSubscription();
     await disableAll.mutateAsync();
-    setMessage("MY PLAN device reminders are off and saved device subscriptions were revoked.");
+    await clearPersonalEnrollment.mutateAsync();
+    setMessage("MY PLAN device reminders, approved planning reminder copies, and saved device subscriptions were removed.");
+  };
+
+  const syncUpcomingPersonalItems = async () => {
+    try {
+      const result = await syncPersonalEnrollment.mutateAsync({ items: personalReminderCandidates });
+      setMessage(`${result.activeCount} upcoming planning item${result.activeCount === 1 ? " is" : "s are"} available for this account’s device reminders. ${result.scheduledCount ? "Their reminder timing was refreshed." : "Nothing new needed scheduling."}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "MY PLAN could not update your device-reminder plan.");
+    }
+  };
+
+  const removeUpcomingPersonalItems = async () => {
+    try {
+      await clearPersonalEnrollment.mutateAsync();
+      setMessage("Upcoming local planning copies were removed from MY PLAN’s device-reminder service. Your browser workspace itself was not changed.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "MY PLAN could not remove the planning reminder copies.");
+    }
   };
 
   const enabled = Boolean(preferences.data?.enabled && subscriptions.data?.length);
@@ -82,6 +105,7 @@ export default function ReminderWorkspace({ isAuthenticated, onSignIn, onOpenCal
     {!isAuthenticated ? <section className="reminder-state"><ShieldCheck size={20} /><div><strong>Sign in to protect your device settings.</strong><span>Device subscriptions and off-app reminders are private to one MY PLAN account.</span></div><button className="accent" onClick={onSignIn}>Sign in <ExternalLink size={15} /></button></section> : null}
     {isAuthenticated ? <><section className={`reminder-permission is-${devicePermission}`}><div className="permission-icon"><Smartphone size={21} /></div><div><p className="kicker">This browser</p><h2>{enabled ? "MY PLAN can remind you here." : deviceStatus.heading}</h2><p>{enabled ? "Notifications appear outside MY PLAN and open the relevant private planning view when selected." : deviceStatus.body}</p></div>{enabled ? <button className="reminder-disable" disabled={disableAll.isPending} onClick={() => void turnOffEverywhere()}><X size={15} /> Turn off everywhere</button> : devicePermission === "unsupported" || devicePermission === "denied" ? <span className="reminder-blocked">{devicePermission === "unsupported" ? "In-app reminders available" : "Permission blocked"}</span> : <button className="accent" disabled={!deviceCanBeEnabled || subscribe.isPending} onClick={() => void enableDevice()}><BellRing size={15} /> {subscribe.isPending ? "Enabling…" : readiness.data?.ready ? "Enable device reminders" : "Delivery setup pending"}</button>}</section>
       <section className="reminder-preferences"><div className="list-progress-heading"><div><p className="kicker"><Clock3 size={14} /> Your delivery rules</p><h2>Gentle by default.</h2></div><span>Saved privately to your account</span></div><div className="reminder-control-grid"><label>Default timing<select value={leadMinutes} onChange={event => setLeadMinutes(Number(event.target.value))}>{leadOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select><small>Used for new timed plans that you choose to remind yourself about.</small></label><label className="quiet-toggle"><span><input type="checkbox" checked={quietEnabled} onChange={event => setQuietEnabled(event.target.checked)} /> Quiet hours</span><small>Hold reminders until your chosen quiet period ends.</small></label>{quietEnabled ? <div className="quiet-time-row"><label>Start<input type="time" value={quietStart} onChange={event => setQuietStart(event.target.value)} /></label><label>End<input type="time" value={quietEnd} onChange={event => setQuietEnd(event.target.value)} /></label></div> : null}</div><button className="reminder-save" disabled={updatePreferences.isPending} onClick={savePreferences}><Check size={15} /> {updatePreferences.isPending ? "Saving…" : "Save reminder rules"}</button></section>
+      <section className="reminder-plan-enrollment"><div><p className="kicker"><ShieldCheck size={14} /> Your planning data, by choice</p><h2>Bring upcoming items to device reminders.</h2><p>When you choose Sync upcoming items, MY PLAN securely saves only an item’s title, time, type, and destination for the next 120 days. It does not upload notes, courses, checklists, or other local workspace details. Sync again after editing an item; remove these copies whenever you choose.</p></div><div className="reminder-enrollment-summary"><strong>{personalReminderCandidates.length}</strong><span>upcoming item{personalReminderCandidates.length === 1 ? "" : "s"} available to sync</span>{enrollment.data?.activeCount ? <small>{enrollment.data.activeCount} currently approved for device reminders</small> : <small>No local planning items are stored for off-app delivery.</small>}</div><div className="reminder-enrollment-actions"><button className="accent" disabled={!enabled || syncPersonalEnrollment.isPending} onClick={() => void syncUpcomingPersonalItems()}><BellRing size={15} /> {syncPersonalEnrollment.isPending ? "Syncing…" : "Sync upcoming items"}</button>{enrollment.data?.activeCount ? <button disabled={clearPersonalEnrollment.isPending} onClick={() => void removeUpcomingPersonalItems()}>{clearPersonalEnrollment.isPending ? "Removing…" : "Remove planning copies"}</button> : null}</div>{!enabled ? <small className="reminder-enrollment-note">Enable this device first. MY PLAN will not copy local planning items to the reminder service before you do.</small> : null}</section>
       <section className="reminder-devices"><div><p className="kicker"><Smartphone size={14} /> Connected browsers</p><h2>Your devices, your choice.</h2><p>Removing a browser stops MY PLAN from delivering to it. A browser-level permission can also be changed in its own settings.</p></div>{subscriptions.data?.length ? <ul>{subscriptions.data.map(device => <li key={device.id}><span><b>{device.userAgent?.includes("Mobile") ? "Mobile browser" : "Browser device"}</b><small>{device.status} · added {new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(device.createdAt))}</small></span><button onClick={() => unsubscribe.mutate({ subscriptionId: device.id })}>Remove</button></li>)}</ul> : <div className="reminder-empty"><BellRing size={20} /><strong>No device is connected yet.</strong><p>Choose Enable device reminders above when delivery is ready.</p></div>}</section>
       {message ? <p className="reminder-message" role="status">{message}</p> : null}
       <aside className="reminder-note"><ShieldCheck size={17} /><span>MY PLAN asks only after you choose to enable reminders. It does not request permission on page load, and it never shares one user’s reminder content with another user.</span></aside>

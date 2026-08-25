@@ -184,6 +184,25 @@ export const pushReminderDeliveries = mysqlTable("pushReminderDeliveries", {
   index("pushReminderDeliveries_user_idx").on(table.userId),
 ]);
 
+/** Minimal, explicit copies of upcoming local planning items that a user has chosen to make available for device reminders. */
+export const personalReminderItems = mysqlTable("personalReminderItems", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sourceKind: mysqlEnum("sourceKind", ["task", "event", "block"]).notNull(),
+  sourceId: varchar("sourceId", { length: 255 }).notNull(),
+  title: varchar("title", { length: 1024 }).notNull(),
+  body: varchar("body", { length: 512 }).notNull(),
+  targetSection: mysqlEnum("targetSection", ["calendar", "todo"]).notNull(),
+  occursAt: timestamp("occursAt").notNull(),
+  deliveryKey: varchar("deliveryKey", { length: 128 }).notNull(),
+  isActive: boolean("isActive").notNull().default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("personalReminderItems_user_source_unique").on(table.userId, table.sourceKind, table.sourceId),
+  index("personalReminderItems_user_active_idx").on(table.userId, table.isActive, table.occursAt),
+]);
+
 export type CalendarConnection = typeof calendarConnections.$inferSelect;
 export type LinkedCalendar = typeof linkedCalendars.$inferSelect;
 export type SyncedEvent = typeof syncedEvents.$inferSelect;
@@ -191,3 +210,4 @@ export type SparkEvent = typeof sparkEvents.$inferSelect;
 export type PushReminderPreference = typeof pushReminderPreferences.$inferSelect;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type PushReminderDelivery = typeof pushReminderDeliveries.$inferSelect;
+export type PersonalReminderItem = typeof personalReminderItems.$inferSelect;

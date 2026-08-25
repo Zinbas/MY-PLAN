@@ -1,8 +1,7 @@
 import { and, asc, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
+import { calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, personalReminderItems, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
-import { calendarsForConnections, connectionsForUser, visibleEventsForCalendars } from "./calendarOwnership";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -136,9 +135,13 @@ export async function upsertGoogleCalendarConnection(input: {
 export async function listUserCalendarConnections(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const connections = connectionsForUser(await db.select().from(calendarConnections), userId);
-  const calendars = connections.length
-    ? await db.select().from(linkedCalendars)
+  const connections = await db
+    .select()
+    .from(calendarConnections)
+    .where(eq(calendarConnections.userId, userId));
+  const connectionIds = connections.map(connection => connection.id);
+  const calendars = connectionIds.length
+    ? await db.select().from(linkedCalendars).where(inArray(linkedCalendars.connectionId, connectionIds))
     : [];
   return connections.map(connection => ({
     ...connection,
@@ -223,9 +226,13 @@ export async function upsertLinkedCalendar(input: { connectionId: number; extern
 export async function listOwnedLinkedCalendars(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const connections = connectionsForUser(await db.select().from(calendarConnections), userId);
-  if (!connections.length) return [];
-  return calendarsForConnections(await db.select().from(linkedCalendars), connections);
+  const connections = await db
+    .select({ id: calendarConnections.id })
+    .from(calendarConnections)
+    .where(eq(calendarConnections.userId, userId));
+  const connectionIds = connections.map(connection => connection.id);
+  if (!connectionIds.length) return [];
+  return db.select().from(linkedCalendars).where(inArray(linkedCalendars.connectionId, connectionIds));
 }
 
 export async function setOwnedLinkedCalendarVisibility(userId: number, linkedCalendarId: number, isVisible: boolean) {
@@ -247,9 +254,17 @@ export async function listUserSyncedEvents(userId: number, startAt: Date, endAt:
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
   const calendars = await listOwnedLinkedCalendars(userId);
-  if (!calendars.length) return [];
-  const rows = await db.select().from(syncedEvents).where(and(gte(syncedEvents.endAt, startAt), lte(syncedEvents.startAt, endAt)));
-  return visibleEventsForCalendars(rows, calendars);
+  const visibleCalendarIds = calendars.filter(calendar => calendar.isVisible).map(calendar => calendar.id);
+  if (!visibleCalendarIds.length) return [];
+  return db
+    .select()
+    .from(syncedEvents)
+    .where(and(
+      inArray(syncedEvents.linkedCalendarId, visibleCalendarIds),
+      gte(syncedEvents.endAt, startAt),
+      lte(syncedEvents.startAt, endAt),
+      eq(syncedEvents.isDeleted, false),
+    ));
 }
 
 export async function getOwnedLinkedCalendar(userId: number, linkedCalendarId: number) {
@@ -260,9 +275,16 @@ export async function getOwnedLinkedCalendar(userId: number, linkedCalendarId: n
 export async function getUserSyncedEvent(userId: number, eventId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
-  const event = (await db.select().from(syncedEvents).where(eq(syncedEvents.id, eventId)).limit(1))[0];
+  const calendars = await listOwnedLinkedCalendars(userId);
+  const ownedCalendarIds = calendars.map(calendar => calendar.id);
+  if (!ownedCalendarIds.length) return undefined;
+  const event = (await db
+    .select()
+    .from(syncedEvents)
+    .where(and(eq(syncedEvents.id, eventId), inArray(syncedEvents.linkedCalendarId, ownedCalendarIds)))
+    .limit(1))[0];
   if (!event) return undefined;
-  const calendar = await getOwnedLinkedCalendar(userId, event.linkedCalendarId);
+  const calendar = calendars.find(candidate => candidate.id === event.linkedCalendarId);
   return calendar ? { event, calendar } : undefined;
 }
 
@@ -448,6 +470,80 @@ export async function cancelOwnedPushReminderDeliveries(userId: number, delivery
   const db = await getDb();
   if (!db || !deliveryKeys.length) return;
   await db.update(pushReminderDeliveries).set({ state: "cancelled" }).where(and(eq(pushReminderDeliveries.userId, userId), inArray(pushReminderDeliveries.deliveryKey, deliveryKeys)));
+}
+
+export type PersonalReminderEnrollmentInput = {
+  sourceKind: "task" | "event" | "block";
+  sourceId: string;
+  title: string;
+  body: string;
+  targetSection: "calendar" | "todo";
+  occursAt: Date;
+  deliveryKey: string;
+  scheduledAt: Date;
+};
+
+/**
+ * Stores only the minimal metadata a user explicitly selected for off-app reminders.
+ * Existing delivery keys remain unchanged for identical items so an already-sent reminder
+ * cannot become pending again during a later manual refresh.
+ */
+export async function syncOwnedPersonalReminderItems(userId: number, items: PersonalReminderEnrollmentInput[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const existing = await db.select().from(personalReminderItems)
+    .where(and(eq(personalReminderItems.userId, userId), eq(personalReminderItems.isActive, true)));
+  const existingBySource = new Map(existing.map(item => [`${item.sourceKind}:${item.sourceId}`, item]));
+  const incomingSources = new Set(items.map(item => `${item.sourceKind}:${item.sourceId}`));
+  const stale = existing.filter(item => !incomingSources.has(`${item.sourceKind}:${item.sourceId}`));
+  const itemsToSchedule = items.filter(item => {
+    const current = existingBySource.get(`${item.sourceKind}:${item.sourceId}`);
+    return !current || current.deliveryKey !== item.deliveryKey || current.title !== item.title || current.body !== item.body || current.targetSection !== item.targetSection || current.occursAt.getTime() !== item.occursAt.getTime();
+  });
+
+  for (const item of items) {
+    const { scheduledAt: _scheduledAt, ...record } = item;
+    await db.insert(personalReminderItems).values({ userId, ...record, isActive: true }).onDuplicateKeyUpdate({
+      set: { title: item.title, body: item.body, targetSection: item.targetSection, occursAt: item.occursAt, deliveryKey: item.deliveryKey, isActive: true },
+    });
+  }
+  if (stale.length) {
+    await db.update(personalReminderItems).set({ isActive: false })
+      .where(and(eq(personalReminderItems.userId, userId), inArray(personalReminderItems.id, stale.map(item => item.id))));
+  }
+  return {
+    activeCount: items.length,
+    itemsToSchedule,
+    deliveryKeysToCancel: [...stale.map(item => item.deliveryKey), ...itemsToSchedule.flatMap(item => {
+      const current = existingBySource.get(`${item.sourceKind}:${item.sourceId}`);
+      return current && current.deliveryKey !== item.deliveryKey ? [current.deliveryKey] : [];
+    })],
+  };
+}
+
+export async function getOwnedPersonalReminderEnrollmentSummary(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const items = await db.select({ id: personalReminderItems.id, updatedAt: personalReminderItems.updatedAt })
+    .from(personalReminderItems)
+    .where(and(eq(personalReminderItems.userId, userId), eq(personalReminderItems.isActive, true)));
+  return {
+    activeCount: items.length,
+    lastUpdatedAt: items.reduce<Date | null>((latest, item) => !latest || item.updatedAt > latest ? item.updatedAt : latest, null),
+  };
+}
+
+export async function clearOwnedPersonalReminderItems(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const items = await db.select({ id: personalReminderItems.id, deliveryKey: personalReminderItems.deliveryKey })
+    .from(personalReminderItems)
+    .where(and(eq(personalReminderItems.userId, userId), eq(personalReminderItems.isActive, true)));
+  if (items.length) {
+    await db.update(personalReminderItems).set({ isActive: false })
+      .where(and(eq(personalReminderItems.userId, userId), inArray(personalReminderItems.id, items.map(item => item.id))));
+  }
+  return items.map(item => item.deliveryKey);
 }
 
 export type ClaimedPushReminderDelivery = typeof pushReminderDeliveries.$inferSelect;
