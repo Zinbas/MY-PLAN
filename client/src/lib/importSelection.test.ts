@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapSelectedImportCandidates } from "./importSelection";
+import { firstImportedCalendarDate, mapSelectedImportCandidates } from "./importSelection";
 
 const candidates = [
   { id: "event", title: "Timed exam", kind: "event" as const, date: "2026-09-14", time: "10:15", durationMinutes: 90, course: "Math", notes: "Room 201" },
@@ -39,5 +39,17 @@ describe("selected import mapping", () => {
     expect(mapped.ready).toHaveLength(30);
     expect(mapped.blocks).toHaveLength(30);
     expect(mapped.blocks.every(block => block.repeat === "weekly" && block.repeatUntil?.toISOString().includes("2026-12-18T23:59"))).toBe(true);
+  });
+
+  it("chooses the earliest imported item as the calendar destination after confirmation", () => {
+    const mapped = mapSelectedImportCandidates(candidates, 1_700_000_000_000, "2026-12-18");
+
+    expect(firstImportedCalendarDate(mapped)).toEqual(new Date(2026, 8, 1, 14));
+  });
+
+  it("returns no calendar destination when no approved candidate could be mapped", () => {
+    const mapped = mapSelectedImportCandidates([candidates[2]], 1_700_000_000_000);
+
+    expect(firstImportedCalendarDate(mapped)).toBeNull();
   });
 });

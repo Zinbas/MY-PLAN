@@ -330,3 +330,4 @@
 - [x] Show a clear Enabled status in Workspace immediately after a user turns on in-app reminder popups, including whether the gentle ring is enabled.
 - [x] Repair the current in-app reminder runtime issue and verify that enablement status remains accurate after reload and scope changes.
 - [x] Compare the latest MY PLAN published commit and tracked file set with GitHub main, then synchronize every missing committed source file.
+- [x] Fix image-import confirmation so clicking Add all selected persists each selected event and refreshes the calendar view without duplicate or unrelated entries.

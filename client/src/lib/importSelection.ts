@@ -45,3 +45,14 @@ export function mapSelectedImportCandidates(selected: SelectedImportCandidate[],
   });
   return { ready, skipped, blocks, events, tasks };
 }
+
+export function firstImportedCalendarDate({ blocks, events, tasks }: Pick<ReturnType<typeof mapSelectedImportCandidates>, "blocks" | "events" | "tasks">) {
+  const dates = [
+    ...blocks.map(block => block.startAt),
+    ...events.map(event => event.startAt),
+    ...tasks.map(task => task.scheduledStartAt ?? task.dueAt),
+  ].filter(date => !Number.isNaN(date.getTime()));
+
+  if (!dates.length) return null;
+  return new Date(Math.min(...dates.map(date => date.getTime())));
+}

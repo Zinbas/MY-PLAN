@@ -15,7 +15,7 @@ import { readComposerDateTime } from "@/lib/composerDateTime";
 import { syncCalendarStatus } from "@/lib/syncStatus";
 import type { AssistantCommandDraft } from "@shared/assistantDraft";
 import { assistantDraftCanOpenComposer } from "@shared/assistantDraft";
-import { mapSelectedImportCandidates } from "@/lib/importSelection";
+import { firstImportedCalendarDate, mapSelectedImportCandidates } from "@/lib/importSelection";
 import { applyOptimisticCalendarSelection } from "@/lib/calendarSelectionOptimistic";
 import { calendarSelectionSaveMessage } from "@/lib/calendarSelectionFeedback";
 import { showsAssistantShortcut, type PlannerSection } from "@/lib/plannerNavigation";
@@ -576,6 +576,7 @@ export default function Home() {
   const importScheduleCandidates = (selected: ImportCandidate[], weeklyRepeatUntil?: string) => {
     const { ready, skipped, blocks: importedBlocks, events: importedEvents, tasks: importedTasks } = mapSelectedImportCandidates(selected, Date.now(), weeklyRepeatUntil);
     if (!ready.length) { setImportMessage("Select at least one item and enter a real date in YYYY-MM-DD format before adding it."); return false; }
+    const importedCalendarDate = firstImportedCalendarDate({ blocks: importedBlocks, events: importedEvents, tasks: importedTasks });
     setPlannerBlocks(current => [...current, ...importedBlocks]);
     setPersonalEvents(current => [...current, ...importedEvents]);
     setTasks(current => [...current, ...importedTasks]);
@@ -586,6 +587,15 @@ export default function Home() {
     setImportCandidates(current => current.filter(candidate => !importedIds.has(candidate.id)));
     setImportMessage(`${ready.length} selected item${ready.length === 1 ? "" : "s"} added to your private MY PLAN workspace.${firstImportedConflict ? " Overlaps were found; review them before relying on the new schedule." : ""}${skipped ? ` ${skipped} selected candidate${skipped === 1 ? " needs" : "s need"} a complete date before it can be added.` : ""} Blank times use 9:00 AM.`);
     setToast(`Imported ${ready.length} selected plan item${ready.length === 1 ? "" : "s"}. Undo is available below.`);
+    if (importedCalendarDate) {
+      setSection("calendar");
+      setView("month");
+      setCursor(monthStart(importedCalendarDate));
+      setSelectedDate(importedCalendarDate);
+      setSearch("");
+      setFilter("all");
+      clearSecondaryFilters();
+    }
     return true;
   };
   const addApprovedImportCandidates = (weeklyStart?: string, weeklyEnd?: string) => {
