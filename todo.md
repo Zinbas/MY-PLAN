@@ -340,3 +340,5 @@
 - [x] Add a coherent, reduced-motion-aware interaction system for page changes, dialogs, loading states, buttons, navigation, and success feedback without visual clutter.
 - [x] Restore the managed MY PLAN production entrypoint after the Vercel merge changed the build output from dist/index.js to dist/local.js.
 - [x] Redesign the MY PLAN logo loader with a more aesthetic, app-inspired motion sequence while preserving the brand, performance, and reduced-motion support.
+- [x] Synchronize the shared MY PLAN preview with the latest project version and confirm the refreshed build is running.
+- [x] Remove the loader’s visible fill-line effect and refine the retained circle-and-logo motion for a smoother, calmer loading transition.
