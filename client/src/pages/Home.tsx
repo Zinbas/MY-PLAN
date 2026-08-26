@@ -45,7 +45,7 @@ const LazyImportWorkspace = lazy(() => import("./ImportWorkspace"));
 const MY_PLAN_LOGO_URL = "/manus-storage/my-plan-note-mark_567e5611.jpg";
 
 function BrandLoader({ label, compact = false }: { label: string; compact?: boolean }) {
-  return <section className={`my-plan-loader ${compact ? "is-compact" : ""}`} role="status" aria-live="polite"><div className="loader-cover"><div className="loader-mark" aria-hidden="true"><div className="loader-paper-halo" /><div className="loader-stamp"><img src={MY_PLAN_LOGO_URL} alt="" /></div></div><div className="loader-copy"><p>MY PLAN</p><strong>{label}</strong><span>{compact ? "Almost ready" : "Opening your paper workspace"}</span></div></div></section>;
+  return <section className={`my-plan-loader ${compact ? "is-compact" : ""}`} role="status" aria-live="polite"><div className="loader-cover"><div className="loader-mark" aria-hidden="true"><div className="loader-paper-halo" /><div className="loader-stamp-pulse"><div className="loader-stamp"><img src={MY_PLAN_LOGO_URL} alt="" /></div></div></div><div className="loader-copy"><p>MY PLAN</p><strong>{label}</strong><span>{compact ? "Almost ready" : "Opening your paper workspace"}</span></div></div></section>;
 }
 
 type ViewMode = "month" | "week" | "agenda";

@@ -342,3 +342,4 @@
 - [x] Redesign the MY PLAN logo loader with a more aesthetic, app-inspired motion sequence while preserving the brand, performance, and reduced-motion support.
 - [x] Synchronize the shared MY PLAN preview with the latest project version and confirm the refreshed build is running.
 - [x] Remove the loader’s visible fill-line effect and refine the retained circle-and-logo motion for a smoother, calmer loading transition.
+- [x] Add a subtle, reduced-motion-aware pulse to the MY PLAN loading logo without reintroducing a fill-line effect.
