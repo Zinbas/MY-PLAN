@@ -246,7 +246,7 @@
 - [x] Validate the repaired image schedule importer with a non-writing review fixture matching the reported JPEG upload path.
 - [x] Clear cached Google connection and selected-calendar interface data immediately on MY PLAN logout without altering server-side connections or planning data.
 - [x] Replace the floating account chip with a polished first-visit MY PLAN welcome flow that asks users to sign in or continue as a guest, then asks whether they want a tutorial.
-- [ ] Complete and verify the visible native MY PLAN device-reminder opt-in experience while keeping VAPID credentials and durable delivery activation securely gated.
+- [x] Complete and verify the visible native MY PLAN device-reminder opt-in experience while keeping VAPID credentials and durable delivery activation securely gated.
 - [x] Validate the securely configured VAPID readiness endpoint, publish the activation code, and create the cron-only one-minute MY PLAN reminder dispatcher without sending unapproved reminders.
 - [ ] Remove the unexpected production-only “Made with Manus” overlay so MY PLAN remains the sole product-facing brand.
 - [x] Correct the reported connected-calendar selection-card visual misalignment while preserving all existing selections.
