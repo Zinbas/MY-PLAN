@@ -108,7 +108,8 @@ export default function ReminderWorkspace({ isAuthenticated, personalReminderCan
   };
 
   const browserConnection: DeviceConnectionState = devicePermission === "checking" || (Boolean(browserSubscription) && currentDevice.isLoading) ? "checking" : currentDevice.data?.connected ? "connected" : "not-connected";
-  const deviceStatus = deviceReminderAccessStatus({ permission: devicePermission, deliveryReady: Boolean(readiness.data?.ready), hasLocalSubscription: Boolean(browserSubscription), connection: browserConnection });
+  const deliveryState = readiness.isLoading ? "checking" : readiness.isError ? "unavailable" : readiness.data?.ready ? "ready" : "setup-pending";
+  const deviceStatus = deviceReminderAccessStatus({ permission: devicePermission, deliveryReady: Boolean(readiness.data?.ready), deliveryState, hasLocalSubscription: Boolean(browserSubscription), connection: browserConnection });
   const currentDeviceConnected = browserConnection === "connected";
   const accountDeviceEnabled = Boolean(preferences.data?.enabled && subscriptions.data?.length);
   const inAppEnabled = inAppReminderSettings.popupEnabled;

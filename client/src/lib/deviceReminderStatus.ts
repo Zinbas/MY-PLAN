@@ -1,17 +1,22 @@
 export type DevicePermissionState = "checking" | "unsupported" | "default" | "granted" | "denied";
 export type DeviceConnectionState = "checking" | "connected" | "not-connected";
+export type DeviceDeliveryState = "checking" | "ready" | "setup-pending" | "unavailable";
 
 type DeviceReminderAccessInput = {
   permission: DevicePermissionState;
   deliveryReady: boolean;
+  deliveryState?: DeviceDeliveryState;
   hasLocalSubscription: boolean;
   connection: DeviceConnectionState;
 };
 
-export function deviceReminderAccessStatus({ permission, deliveryReady, hasLocalSubscription, connection }: DeviceReminderAccessInput) {
+export function deviceReminderAccessStatus({ permission, deliveryReady, deliveryState, hasLocalSubscription, connection }: DeviceReminderAccessInput) {
+  const resolvedDeliveryState = deliveryState ?? (deliveryReady ? "ready" : "setup-pending");
   if (permission === "unsupported") return { heading: "This browser cannot receive device reminders.", body: "Use the in-app Notification Center here, or open MY PLAN in a modern browser that supports notifications.", permissionLabel: "Unavailable", connectionLabel: "Unavailable", actionLabel: null, canEnable: false } as const;
   if (permission === "denied") return { heading: "Notifications are blocked in this browser.", body: "MY PLAN cannot ask again until you change this site’s notification permission in your browser settings.", permissionLabel: "Blocked", connectionLabel: "Not connected", actionLabel: null, canEnable: false } as const;
-  if (!deliveryReady) return { heading: "Device delivery is being prepared.", body: "MY PLAN will request notification permission only after secure device delivery is available.", permissionLabel: permission === "granted" ? "Allowed" : permission === "checking" ? "Checking" : "Not requested", connectionLabel: "Waiting for delivery", actionLabel: null, canEnable: false } as const;
+  if (resolvedDeliveryState === "checking") return { heading: "Checking MY PLAN device delivery.", body: "MY PLAN is confirming secure reminder delivery before it offers a permission prompt. No notification is being sent.", permissionLabel: permission === "granted" ? "Allowed" : permission === "checking" ? "Checking" : "Not requested", connectionLabel: "Checking delivery", actionLabel: null, canEnable: false } as const;
+  if (resolvedDeliveryState === "unavailable") return { heading: "MY PLAN could not verify device delivery.", body: "Try again in a moment. MY PLAN will not request notification permission until secure delivery readiness is confirmed.", permissionLabel: permission === "granted" ? "Allowed" : permission === "checking" ? "Checking" : "Not requested", connectionLabel: "Unable to verify", actionLabel: null, canEnable: false } as const;
+  if (resolvedDeliveryState === "setup-pending") return { heading: "Device delivery is being prepared.", body: "MY PLAN will request notification permission only after secure device delivery is available.", permissionLabel: permission === "granted" ? "Allowed" : permission === "checking" ? "Checking" : "Not requested", connectionLabel: "Waiting for delivery", actionLabel: null, canEnable: false } as const;
   if (permission === "checking") return { heading: "Checking browser notification access.", body: "MY PLAN is reading this browser’s existing permission and device connection without sending a notification.", permissionLabel: "Checking", connectionLabel: "Checking", actionLabel: null, canEnable: false } as const;
   if (permission === "default") return { heading: "Allow notifications to connect this browser.", body: "Choose the button below and your browser will show its notification permission prompt. MY PLAN connects this device only if you allow it.", permissionLabel: "Not requested", connectionLabel: "Not connected", actionLabel: "Allow notifications and connect", canEnable: true } as const;
   if (connection === "checking") return { heading: "Checking this browser’s MY PLAN connection.", body: "Notifications are allowed. MY PLAN is confirming whether this specific browser is connected to your private account.", permissionLabel: "Allowed", connectionLabel: "Checking", actionLabel: null, canEnable: false } as const;

@@ -19,4 +19,16 @@ describe("device reminder browser access status", () => {
       permissionLabel: "Blocked", canEnable: false,
     });
   });
+
+  it("labels an in-flight delivery-readiness query as checking instead of setup pending", () => {
+    expect(deviceReminderAccessStatus({ permission: "default", deliveryReady: false, deliveryState: "checking", hasLocalSubscription: false, connection: "not-connected" })).toMatchObject({
+      heading: "Checking MY PLAN device delivery.", connectionLabel: "Checking delivery", actionLabel: null, canEnable: false,
+    });
+  });
+
+  it("distinguishes an unavailable readiness check from an actual unconfigured delivery service", () => {
+    expect(deviceReminderAccessStatus({ permission: "granted", deliveryReady: false, deliveryState: "unavailable", hasLocalSubscription: false, connection: "not-connected" })).toMatchObject({
+      heading: "MY PLAN could not verify device delivery.", connectionLabel: "Unable to verify", actionLabel: null, canEnable: false,
+    });
+  });
 });
