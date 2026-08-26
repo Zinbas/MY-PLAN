@@ -255,6 +255,7 @@
 - [x] Diagnose and repair the reported live MY PLAN sign-in failure before resuming the authorized calendar-selection test.
 - [x] Preserve successful calendar selection changes and show accurate feedback when subsequent Google sync setup needs attention.
 - [ ] Correct the live device-reminder workspace when it shows setup pending despite a verified VAPID-ready response.
+- [ ] Reconcile verified server VAPID readiness with the browser device-reminder workspace state without triggering permission prompts, subscriptions, or notification delivery.
 - [x] Scope calendar, linked-calendar, and synced-event database reads at SQL level so other users’ credential-bearing rows never enter an unrelated request’s memory.
 - [x] Restore browser pinch-zoom support by removing the restrictive viewport maximum scale.
 - [x] Add explicit, opt-in server-side reminder enrollment for personal tasks, blocks, and events so closed-app reminders can use approved minimal delivery data.
@@ -338,3 +339,4 @@
 - [x] Fix device reminders so the browser permission request is triggered from the user action when needed and the UI shows accurate connected, waiting, blocked, or unavailable status.
 - [x] Add a coherent, reduced-motion-aware interaction system for page changes, dialogs, loading states, buttons, navigation, and success feedback without visual clutter.
 - [x] Restore the managed MY PLAN production entrypoint after the Vercel merge changed the build output from dist/index.js to dist/local.js.
+- [x] Redesign the MY PLAN logo loader with a more aesthetic, app-inspired motion sequence while preserving the brand, performance, and reduced-motion support.
