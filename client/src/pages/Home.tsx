@@ -27,6 +27,7 @@ import { onTimeCompletionStats, recentCompletedTasks, sortTodoTasks, weeklyActiv
 import { deadlineCues, deadlineLabel } from "@/lib/planningContext";
 import { personalReminderCandidates } from "@/lib/personalReminderEnrollment";
 import { dueInAppReminder, inAppReminderCandidates as buildInAppReminderCandidates, loadInAppReminderSettings, loadInAppReminderState, saveInAppReminderSettings, saveInAppReminderState, type InAppReminderSettings } from "@/lib/inAppReminders";
+import { initialReminderLeadForComposer } from "@/lib/reminderQuickFlow";
 import WorkspaceTools from "./WorkspaceTools";
 import AssistantWorkspace from "./AssistantWorkspace";
 import InAppReminderPopup from "./InAppReminderPopup";
@@ -413,7 +414,7 @@ export default function Home() {
   const returnHome = () => { goToday(); openSection("calendar"); };
   const openDateJump = () => { cancelPopoverDismissal(); setJumpMonth(String(cursor.getMonth() + 1)); setJumpYear(String(cursor.getFullYear())); setShowDateJump(value => !value); setShowFilterMenu(false); };
   const applyDateJump = () => { const month = Number(jumpMonth); const year = Number(jumpYear); if (month < 1 || month > 12 || year < 1900 || year > 2200) return setToast("Enter a month from 1–12 and a year from 1900–2200."); const next = new Date(year, month - 1, 1); setCursor(next); setSelectedDate(next); closePopovers(); setToast(`Showing ${formatMonth(next)}.`); };
-  const resetDraft = (kind: ComposerKind, date = selectedDate, enableReminder = false) => { setComposerKind(kind); setEditingId(null); setDraftTitle(""); setDraftDate(dateKey(date)); setDraftTime(""); setDraftDuration("60"); setDraftRepeat("none"); setDraftPriority("normal"); setDraftCourse(""); setDraftNotes(""); setDraftScheduleTask(true); setDraftReminderLeadMinutes(enableReminder ? 10 : ""); };
+  const resetDraft = (kind: ComposerKind, date = selectedDate, enableReminder = false) => { setComposerKind(kind); setEditingId(null); setDraftTitle(""); setDraftDate(dateKey(date)); setDraftTime(""); setDraftDuration("60"); setDraftRepeat("none"); setDraftPriority("normal"); setDraftCourse(""); setDraftNotes(""); setDraftScheduleTask(true); setDraftReminderLeadMinutes(initialReminderLeadForComposer(enableReminder)); };
   const openComposerForDate = (kind: ComposerKind, date: Date, enableReminder = false) => { closePopovers(); setDateContextMenu(null); setMobileDateAction(null); setSelectedDate(date); setCursor(monthStart(date)); setSection("calendar"); resetDraft(kind, date, enableReminder); setShowComposer(true); };
   const openComposer = (kind: ComposerKind, enableReminder = false) => { openComposerForDate(kind, selectedDate, enableReminder); };
   const askAssistant = () => {

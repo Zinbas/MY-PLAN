@@ -290,9 +290,9 @@
 - [x] Fix the cramped website reminder composer layout and prevent browser autocomplete/spelling UI from obscuring the title field.
 - [x] Add a focused quick-reminder flow with one-tap lead-time choices, while retaining full task/event editing when needed.
 - [x] Validate the easier reminder flow on desktop and compact-phone layouts, then publish the correction.
-- [ ] Simplify the website reminder flow with a quick set-and-save path while preserving existing lead-time choices, editing, enrollment, and delivery controls.
-- [ ] Add progressive disclosure so advanced reminder options remain available without overwhelming the primary quick flow.
-- [ ] Revalidate the simplified reminder flow on desktop and compact phone before publishing.
+- [x] Simplify the website reminder flow with a quick set-and-save path while preserving existing lead-time choices, editing, enrollment, and delivery controls.
+- [x] Add progressive disclosure so advanced reminder options remain available without overwhelming the primary quick flow.
+- [x] Revalidate the simplified reminder flow on desktop and compact phone before publishing.
 - [ ] Audit Calendar, To-do, Progress, Workspace, Profile, imports, connections, notifications, and admin surfaces for high-friction primary actions.
 - [ ] Simplify the primary action hierarchy and navigation labels across the website without removing advanced controls or existing features.
 - [ ] Make common creation, editing, import, sync, reminder, profile, and workspace actions easier to discover and operate.
