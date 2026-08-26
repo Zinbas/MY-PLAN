@@ -114,3 +114,8 @@ temp/
 # Manus version file (auto-generated, not part of source)
 client/public/__manus__/version.json
 .project-config.json
+
+# Internal planning notes and validation records are kept outside the public source repository.
+todo.md
+*.md
+docs/

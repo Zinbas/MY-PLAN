@@ -1,7 +1,0 @@
-# Spark MCP OAuth research
-
-Google’s Gemini Spark custom app setup accepts an MCP URL but requires a standards-compliant OAuth flow when the server is protected. Google’s help guidance states that custom apps are added from Connected Apps and that, when a server does not support dynamic client registration, the user supplies registered client credentials in Advanced features. It currently lists eligibility limits including a personal Google account, English availability, Keep Activity enabled, and stated age/region restrictions. Source: https://support.google.com/gemini/answer/17209137?hl=en&co=GENIE.Platform%3DDesktop
-
-The MCP authorization specification requires protected resource metadata and an authorization-server discovery document. The MCP endpoint must return an OAuth Bearer challenge pointing to protected-resource metadata, and the metadata must advertise the authorization server. Access tokens are sent in the Authorization header, not in URL parameters, and must be audience-bound to the MCP resource. Sources: https://modelcontextprotocol.io/specification/draft/basic/authorization and https://modelcontextprotocol.io/specification/draft/basic/authorization/authorization-server-discovery
-
-The supplied Gemini Spark redirect URI is `https://oauth-redirect.googleusercontent.com/r/user_bound_custom-mcp-113394074363922190415-acadcal26-9ch8welq_manus_space`. It is not a secret. The user has not supplied the Google OAuth client ID or client secret in chat; those must only be entered through secure project fields.

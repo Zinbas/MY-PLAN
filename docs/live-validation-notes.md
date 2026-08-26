@@ -1,6 +1,0 @@
-# Live Validation Notes
-
-- **2026-08-24:** After a deployed-page reload, MY PLAN initially renders the public planning shell while the authenticated account workspace becomes available through **Workspace tools → Account & calendar**. This navigation path was used for the authorized connected-calendar selection validation; no events, tasks, or imports were changed.
-- **2026-08-24:** An authorized temporary unselection persisted live with immediate visual feedback and was restored to the original six-calendar state. Re-enabling exposed a non-critical downstream synchronization-status write; the final guard makes that telemetry best-effort so it cannot change a saved selection into a false failure.
-- **2026-08-24:** Fresh published sessions continue to expose the authenticated connection workspace through **Workspace tools → Account & calendar**, which is the supported route used for the final live selection-state validation.
-- **2026-08-24:** Final live validation passed. The authorized first-calendar unselection immediately displayed **5/6**, saved successfully, and was restored to **6/6**. The restored selection accurately reported **“Calendar selection saved. Google sync needs attention”** rather than a false rollback. No event, task, or import data was changed.
