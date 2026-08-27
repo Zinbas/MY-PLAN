@@ -1,4 +1,4 @@
-import { CalendarDays, CirclePlus, ListTodo, MoreHorizontal, SunMedium, UserRound, Wrench } from "lucide-react";
+import { BellRing, CalendarDays, CirclePlus, ListTodo, MoreHorizontal, SunMedium, UserRound, Wrench } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { isWorkspaceToolsSection, type PlannerSection } from "@/lib/plannerNavigation";
 import "./mobilePlannerNav.css";
@@ -7,14 +7,13 @@ type Props = {
   activeSection: PlannerSection;
   onOpen: (section: PlannerSection) => void;
   onPlan: () => void;
-  onToday: () => void;
 };
 
 function isMoreSection(section: PlannerSection) {
   return section === "progress" || section === "profile" || isWorkspaceToolsSection(section);
 }
 
-export default function MobilePlannerNav({ activeSection, onOpen, onPlan, onToday }: Props) {
+export default function MobilePlannerNav({ activeSection, onOpen, onPlan }: Props) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreMenuId = useId();
 
@@ -34,8 +33,8 @@ export default function MobilePlannerNav({ activeSection, onOpen, onPlan, onToda
       <button className={isWorkspaceToolsSection(activeSection) ? "is-active" : ""} onClick={() => openMoreSection("tools")}><span className="mobile-more-icon"><Wrench size={17} /></span><span><strong>Workspace</strong><small>Reminders, calendars, and imports</small></span></button>
     </section> : null}
     <nav className="mobile-planner-nav" aria-label="Primary mobile navigation">
-      <button className={activeSection === "calendar" ? "is-active" : ""} aria-current={activeSection === "calendar" ? "page" : undefined} onClick={onToday}>
-        <SunMedium size={18} /><span>Today</span>
+      <button className={activeSection === "reminders" ? "is-active" : ""} aria-current={activeSection === "reminders" ? "page" : undefined} onClick={() => onOpen("reminders")}>
+        <BellRing size={18} /><span>Reminders</span>
       </button>
       <button className={activeSection === "calendar" ? "is-active" : ""} aria-current={activeSection === "calendar" ? "page" : undefined} onClick={() => onOpen("calendar")}>
         <CalendarDays size={18} /><span>Calendar</span>

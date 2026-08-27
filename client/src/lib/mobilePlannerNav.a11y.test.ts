@@ -2,11 +2,12 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 describe("MY PLAN compact-phone navigation", () => {
-  it("uses the APK-inspired Today, Calendar, Add, To-do, and More navigation pattern", async () => {
+  it("uses the APK-inspired Reminders, Calendar, Add, To-do, and More navigation pattern", async () => {
     const source = await readFile(new URL("../pages/MobilePlannerNav.tsx", import.meta.url), "utf8");
 
     expect(source).toContain('aria-label="Primary mobile navigation"');
-    expect(source).toContain("onToday");
+    expect(source).toContain('onOpen("reminders")');
+    expect(source).toContain("Reminders");
     expect(source).toContain('onOpen("calendar")');
     expect(source).toContain('className="mobile-capture"');
     expect(source).toContain("Add a plan item on the selected date");
