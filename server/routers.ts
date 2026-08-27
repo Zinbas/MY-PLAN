@@ -5,7 +5,7 @@ import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { googleActivationChecklist, googleOAuthReadiness, isGoogleOAuthConfigured } from "./googleOAuth";
-import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getOwnedPushSubscriptionStatus, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeApplicationSession, revokeOwnedPushSubscription, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
+import { cancelOwnedPushReminderDeliveries, clearOwnedPersonalReminderItems, getAdminOverview, getOwnedPersonalReminderEnrollmentSummary, getOwnedPlannerSnapshot, getOwnedPushSubscriptionStatus, getPushReminderPreferences, listActivePushSubscriptions, listAdminUserDirectory, listOwnedLinkedCalendars, listOwnedPushSubscriptions, listUserCalendarConnections, listUserSyncedEvents, revokeAllOwnedPushSubscriptions, revokeApplicationSession, revokeOwnedPushSubscription, saveOwnedPlannerSnapshot, setManagedUserRole, syncOwnedPersonalReminderItems, upsertPushReminderDelivery, upsertPushReminderPreferences, upsertPushSubscription } from "./db";
 import { createCalendarEvent, deleteCalendarEvent, setGoogleCalendarSelection, updateCalendarEvent } from "./calendarSync";
 import { getGoogleOAuthConfig } from "./googleOAuth";
 import { extractUploadedSchedule, scheduleImportFailureMessage } from "./scheduleImport";
@@ -28,6 +28,19 @@ export const appRouter = router({
       return {
         success: true,
       } as const;
+    }),
+  }),
+  planner: router({
+    snapshot: protectedProcedure.input(z.object({ workspaceId: z.number().int().positive() })).query(({ ctx }) => getOwnedPlannerSnapshot(ctx.user.id)),
+    saveSnapshot: protectedProcedure.input(z.object({
+      blocks: z.array(z.object({ id: z.string().min(1).max(255), title: z.string().min(1).max(1024) }).passthrough()).max(1_000),
+      events: z.array(z.object({ id: z.string().min(1).max(255), title: z.string().min(1).max(1024) }).passthrough()).max(1_000),
+      tasks: z.array(z.object({ id: z.string().min(1).max(255), title: z.string().min(1).max(1024) }).passthrough()).max(1_000),
+    })).mutation(async ({ ctx, input }) => {
+      const payload = JSON.stringify(input);
+      if (payload.length > 2_000_000) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "MY PLAN has too many local items to sync at once." });
+      const snapshot = await saveOwnedPlannerSnapshot(ctx.user.id, payload);
+      return { revision: snapshot?.revision ?? 0, updatedAt: snapshot?.updatedAt ?? new Date() };
     }),
   }),
   admin: router({

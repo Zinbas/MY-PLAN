@@ -1,6 +1,6 @@
-import { and, asc, eq, gt, gte, inArray, isNull, lt, lte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { applicationSessions, calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, personalReminderItems, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
+import { applicationSessions, calendarConnections, calendarSyncStates, calendarWatchChannels, googleOAuthStates, InsertUser, linkedCalendars, personalReminderItems, plannerSnapshots, pushReminderDeliveries, pushReminderPreferences, pushSubscriptions, sparkAccessTokens, sparkEvents, syncedEvents, users } from "../drizzle/schema";
 import { ENV, isAdminGoogleEmail } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -87,6 +87,42 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getOwnedPlannerSnapshot(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  return (await db.select().from(plannerSnapshots).where(eq(plannerSnapshots.userId, userId)).limit(1))[0] ?? null;
+}
+
+export async function saveOwnedPlannerSnapshot(userId: number, payload: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const existing = await getOwnedPlannerSnapshot(userId);
+  const mergedPayload = mergePlannerSnapshotPayloads(existing?.payload, payload);
+  await db.insert(plannerSnapshots).values({ userId, payload: mergedPayload }).onDuplicateKeyUpdate({
+    set: { payload: mergedPayload, revision: sql`${plannerSnapshots.revision} + 1`, updatedAt: new Date() },
+  });
+  return getOwnedPlannerSnapshot(userId);
+}
+
+type PlannerSnapshotPayload = { blocks: Array<{ id: string } & Record<string, unknown>>; events: Array<{ id: string } & Record<string, unknown>>; tasks: Array<{ id: string } & Record<string, unknown>> };
+
+function parsePlannerSnapshotPayload(value: string | null | undefined): PlannerSnapshotPayload {
+  try {
+    const candidate = JSON.parse(value ?? "") as Partial<PlannerSnapshotPayload>;
+    const normalize = (items: unknown) => Array.isArray(items) ? items.filter((item): item is { id: string } & Record<string, unknown> => Boolean(item && typeof item === "object" && typeof (item as { id?: unknown }).id === "string")) : [];
+    return { blocks: normalize(candidate.blocks), events: normalize(candidate.events), tasks: normalize(candidate.tasks) };
+  } catch {
+    return { blocks: [], events: [], tasks: [] };
+  }
+}
+
+function mergePlannerSnapshotPayloads(existing: string | null | undefined, incoming: string): string {
+  const remote = parsePlannerSnapshotPayload(existing);
+  const local = parsePlannerSnapshotPayload(incoming);
+  const merge = <T extends { id: string }>(serverItems: T[], clientItems: T[]) => Array.from(new Map([...serverItems, ...clientItems].map(item => [item.id, item])).values());
+  return JSON.stringify({ blocks: merge(remote.blocks, local.blocks), events: merge(remote.events, local.events), tasks: merge(remote.tasks, local.tasks) });
 }
 
 export async function createApplicationSession(input: { userId: number; tokenHash: string; expiresAt: Date }) {

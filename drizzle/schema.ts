@@ -1,4 +1,4 @@
-import { boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, mediumtext, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -24,6 +24,14 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+/** One private, server-backed planner snapshot per account for cross-device MY PLAN continuity. */
+export const plannerSnapshots = mysqlTable("plannerSnapshots", {
+  userId: int("userId").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  payload: mediumtext("payload").notNull(),
+  revision: int("revision").notNull().default(0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
 
 /** Individually revocable hashes of browser session credentials. Raw JWTs never enter this table. */
 export const applicationSessions = mysqlTable("applicationSessions", {

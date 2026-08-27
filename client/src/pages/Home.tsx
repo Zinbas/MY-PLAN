@@ -37,6 +37,7 @@ import MobilePlannerNav from "./MobilePlannerNav";
 import CalendarConnectionPicker from "./CalendarConnectionPicker";
 import FirstVisitWelcome from "@/components/FirstVisitWelcome";
 import { loadScopedBlocks, loadScopedEvents, loadScopedTasks } from "@/lib/workspaceLoader";
+import { decodePlannerSnapshot, encodePlannerSnapshot, mergePlannerSnapshots } from "@/lib/plannerSnapshot";
 import { defaultNotificationPreferences, loadNotificationPreferences, loadReadNotificationIds, planningNotifications, saveReadNotificationIds, type NotificationPreferences } from "@/lib/notifications";
 import { ArrowRight, BarChart3, Bell, BellRing, BookOpenCheck, CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CirclePlus, Clock3, CloudCog, Copy, Edit3, ExternalLink, Flag, GraduationCap, ListChecks, ListTodo, LogIn, LogOut, Menu, MessageCircleMore, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Pause, Play, Plus, RefreshCw, Search, ShieldCheck, Settings2, Sparkles, Square, Star, Trash2, Upload, UserRound, Users, X } from "lucide-react";
 
@@ -114,10 +115,13 @@ export default function Home() {
   const isAdmin = canViewAdminControls(isAuthenticated, user?.role);
   const visibleConnections = visiblePrivateData(isAuthenticated, persistedConnections.data);
   const visibleSparkEvents = visiblePrivateData(isAuthenticated, sparkEvents.data);
+  const plannerSnapshotQuery = trpc.planner.snapshot.useQuery({ workspaceId: user?.id ?? 0 }, { enabled: Boolean(isAuthenticated && user?.id), refetchInterval: isAuthenticated ? 20_000 : false, refetchOnWindowFocus: true });
+  const { mutate: savePlannerSnapshot } = trpc.planner.saveSnapshot.useMutation();
   const adminStatus = trpc.admin.status.useQuery(undefined, { enabled: Boolean(isAuthenticated && isAdmin) });
   const adminOverview = trpc.admin.overview.useQuery(undefined, { enabled: Boolean(isAuthenticated && isAdmin) });
   const storageScope = workspaceScopeFor(isAuthenticated, user?.id);
   const storedScope = useRef(storageScope);
+  const [plannerStorageScope, setPlannerStorageScope] = useState(storageScope);
   const [cursor, setCursor] = useState(() => monthStart(new Date()));
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [view, setView] = useState<ViewMode>("month");
@@ -190,6 +194,8 @@ export default function Home() {
   const lastMobileDateTap = useRef<{ key: string; at: number } | null>(null);
   const importFileInput = useRef<HTMLInputElement | null>(null);
   const playedReminderKey = useRef<string | null>(null);
+  const plannerSnapshotScope = useRef<string | null>(null);
+  const lastSyncedPlannerPayload = useRef<string | null>(null);
 
   useEffect(() => {
     if (storedScope.current !== storageScope) {
@@ -201,6 +207,7 @@ export default function Home() {
       setNotificationPreferences(loadNotificationPreferences(localStorage, storageScope));
       setReadNotificationIds(loadReadNotificationIds(localStorage, storageScope));
       setNotificationReadyScope(storageScope);
+      setPlannerStorageScope(storageScope);
       return;
     }
     localStorage.setItem(workspaceStorageKey("blocks", storageScope), JSON.stringify(plannerBlocks));
@@ -208,6 +215,45 @@ export default function Home() {
     localStorage.setItem(workspaceStorageKey("tasks", storageScope), JSON.stringify(tasks));
     if (activeTimer) localStorage.setItem(workspaceStorageKey("active-timer", storageScope), JSON.stringify(activeTimer)); else localStorage.removeItem(workspaceStorageKey("active-timer", storageScope));
   }, [activeTimer, personalEvents, plannerBlocks, storageScope, tasks]);
+  useEffect(() => {
+    if (!isAuthenticated || plannerStorageScope !== storageScope || !plannerSnapshotQuery.isFetched) return;
+    const local = { blocks: plannerBlocks, events: personalEvents, tasks };
+    const remote = decodePlannerSnapshot(plannerSnapshotQuery.data?.payload);
+    const merged = mergePlannerSnapshots(remote, local);
+    const localPayload = encodePlannerSnapshot(local);
+    const mergedPayload = encodePlannerSnapshot(merged);
+    const remotePayload = encodePlannerSnapshot(remote);
+
+    plannerSnapshotScope.current = storageScope;
+    if (mergedPayload !== localPayload) {
+      setPlannerBlocks(merged.blocks);
+      setPersonalEvents(merged.events);
+      setTasks(merged.tasks);
+    }
+    if (lastSyncedPlannerPayload.current === mergedPayload || mergedPayload === remotePayload) {
+      lastSyncedPlannerPayload.current = mergedPayload;
+      return;
+    }
+    lastSyncedPlannerPayload.current = mergedPayload;
+    savePlannerSnapshot(merged, {
+      onSuccess: () => { void trpcUtils.planner.snapshot.invalidate(); },
+      onError: () => { lastSyncedPlannerPayload.current = null; setToast("Saved on this device. MY PLAN will retry your private account sync."); },
+    });
+  }, [isAuthenticated, personalEvents, plannerBlocks, plannerSnapshotQuery.data?.payload, plannerSnapshotQuery.isFetched, plannerStorageScope, savePlannerSnapshot, storageScope, tasks, trpcUtils]);
+  useEffect(() => {
+    if (!isAuthenticated || plannerStorageScope !== storageScope || plannerSnapshotScope.current !== storageScope) return;
+    const snapshot = { blocks: plannerBlocks, events: personalEvents, tasks };
+    const payload = encodePlannerSnapshot(snapshot);
+    if (payload === lastSyncedPlannerPayload.current) return;
+    const timeout = window.setTimeout(() => {
+      lastSyncedPlannerPayload.current = payload;
+      savePlannerSnapshot(snapshot, {
+        onSuccess: () => { void trpcUtils.planner.snapshot.invalidate(); },
+        onError: () => { lastSyncedPlannerPayload.current = null; setToast("Saved on this device. MY PLAN will retry your private account sync."); },
+      });
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [isAuthenticated, personalEvents, plannerBlocks, plannerStorageScope, savePlannerSnapshot, storageScope, tasks, trpcUtils]);
   useEffect(() => {
     if (notificationReadyScope !== storageScope) {
       setNotificationPreferences(loadNotificationPreferences(localStorage, storageScope));
